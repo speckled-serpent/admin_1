@@ -1,0 +1,332 @@
+:root {
+  color-scheme: light;
+  --bg: #f3efe6;
+  --ink: #1c2430;
+  --muted: #5e6a72;
+  --line: #ddd4c6;
+  --card: #fffdf8;
+  --green: #1f6b4a;
+  --green-soft: #e7f3ec;
+  --coral: #9c3b2e;
+  --coral-soft: #f8e8e4;
+  --amber: #8a5a12;
+  --amber-soft: #f8efd8;
+  --slate-soft: #ece7de;
+  --shadow: 0 1px 0 rgba(28, 36, 48, 0.04), 0 16px 40px rgba(28, 36, 48, 0.06);
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  line-height: 1.45;
+  color: var(--ink);
+  background:
+    radial-gradient(1200px 500px at 10% -10%, #e7f3ec 0%, transparent 55%),
+    radial-gradient(900px 400px at 110% 0%, #f8e8e4 0%, transparent 50%),
+    var(--bg);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+code {
+  font-family: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, monospace;
+  font-size: 0.92em;
+}
+
+.wordmark {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-weight: 650;
+  letter-spacing: -0.03em;
+}
+
+.mark {
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 3px;
+  background: conic-gradient(from 210deg, var(--green), #8fb9a3 40%, var(--coral));
+}
+
+.login-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 2rem 1rem;
+}
+
+.login-card {
+  width: min(420px, 100%);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  padding: 1.75rem 1.6rem 1.4rem;
+}
+
+.login-card h1 {
+  font-size: 2rem;
+  font-weight: 560;
+  letter-spacing: -0.03em;
+  margin-top: 1.25rem;
+}
+
+.lede {
+  color: var(--muted);
+  margin-top: 0.4rem;
+}
+
+form {
+  display: grid;
+  gap: 0.85rem;
+  margin-top: 1.4rem;
+}
+
+label {
+  display: grid;
+  gap: 0.35rem;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.92rem;
+}
+
+input {
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 10px;
+  padding: 0.7rem 0.75rem;
+  color: var(--ink);
+}
+
+input:focus {
+  outline: 2px solid var(--green);
+  outline-offset: 1px;
+}
+
+button {
+  border: 0;
+  border-radius: 999px;
+  padding: 0.72rem 1rem;
+  background: var(--ink);
+  color: #f7f4ee;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.65;
+  cursor: progress;
+}
+
+button.ghost {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+
+.form-error {
+  color: var(--coral);
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.92rem;
+}
+
+.hint {
+  margin-top: 1rem;
+  color: var(--muted);
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.85rem;
+}
+
+.app-shell {
+  min-height: 100vh;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 253, 248, 0.8);
+  position: sticky;
+  top: 0;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.who {
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  color: var(--muted);
+}
+
+.page {
+  width: min(1040px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 2rem 0 3rem;
+}
+
+.page-heading h1 {
+  font-size: 2.6rem;
+  font-weight: 560;
+  letter-spacing: -0.04em;
+  margin-top: 0.15rem;
+}
+
+.eyebrow {
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.75rem;
+  color: var(--green);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.stat {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 1rem 1.1rem 0.9rem;
+  box-shadow: var(--shadow);
+}
+
+.stat-label {
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.stat-value {
+  font-variant-numeric: tabular-nums;
+  font-size: 2rem;
+  letter-spacing: -0.04em;
+  margin-top: 0.2rem;
+}
+
+.stat-value.refund {
+  color: var(--coral);
+}
+
+.stat-note {
+  margin-top: 0.35rem;
+  color: var(--muted);
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.85rem;
+}
+
+.panel {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.panel-head {
+  padding: 1rem 1.1rem 0.4rem;
+}
+
+.panel-head h2 {
+  font-size: 1.25rem;
+  font-weight: 560;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.95rem;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--line);
+  vertical-align: top;
+}
+
+th {
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.cell-sub {
+  color: var(--muted);
+  font-size: 0.82rem;
+  margin-top: 0.15rem;
+}
+
+.pill {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 0.15rem 0.55rem;
+  font-size: 0.78rem;
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.pill-refunded,
+.pill-partial-refund {
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+
+.pill-failed {
+  background: var(--coral-soft);
+  color: var(--coral);
+}
+
+.pill-pending {
+  background: var(--slate-soft);
+  color: var(--muted);
+}
+
+.muted {
+  color: var(--muted);
+}
+
+@media (max-width: 720px) {
+  .stats {
+    grid-template-columns: 1fr;
+  }
+
+  .page-heading h1 {
+    font-size: 2rem;
+  }
+}

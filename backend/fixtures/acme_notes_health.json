@@ -1,0 +1,32 @@
+{
+  "pings": [
+    {
+      "id": "ping_acme_001",
+      "checked_at": "2026-10-08T14:00:00Z",
+      "status": "up",
+      "latency_ms": 48,
+      "region": "cedar-1"
+    },
+    {
+      "id": "ping_acme_002",
+      "checked_at": "2026-10-08T14:05:00Z",
+      "status": "degraded",
+      "latency_ms": 910,
+      "region": "harbor-1"
+    },
+    {
+      "id": "ping_acme_003",
+      "checked_at": "2026-10-08T14:10:00Z",
+      "status": "down",
+      "latency_ms": null,
+      "region": "mesa-1"
+    },
+    {
+      "id": "ping_acme_004",
+      "checked_at": "2026-10-08T14:15:00Z",
+      "status": "up",
+      "latency_ms": 61,
+      "region": "cedar-1"
+    }
+  ]
+}

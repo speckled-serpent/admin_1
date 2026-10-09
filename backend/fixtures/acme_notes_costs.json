@@ -1,0 +1,31 @@
+{
+  "items": [
+    {
+      "id": "cost_acme_001",
+      "vendor": "Northwind Hosting",
+      "category": "hosting",
+      "description": "Shared application host, September",
+      "amount": 2400,
+      "currency": "usd",
+      "incurred_on": "2026-09-01"
+    },
+    {
+      "id": "cost_acme_002",
+      "vendor": "Paperplane Mail",
+      "category": "email",
+      "description": "Transactional mail, 10k messages",
+      "amount": 900,
+      "currency": "usd",
+      "incurred_on": "2026-09-01"
+    },
+    {
+      "id": "cost_acme_003",
+      "vendor": "Harbor DNS",
+      "category": "dns",
+      "description": "DNS zone for the month",
+      "amount": 150,
+      "currency": "usd",
+      "incurred_on": "2026-09-01"
+    }
+  ]
+}

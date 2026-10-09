@@ -1,0 +1,109 @@
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "ch_acme_1001",
+      "object": "charge",
+      "amount": 2900,
+      "amount_refunded": 0,
+      "currency": "usd",
+      "status": "succeeded",
+      "paid": true,
+      "refunded": false,
+      "created": 1784127840,
+      "description": "Acme Notes Pro — monthly",
+      "customer": "cus_acme_ada"
+    },
+    {
+      "id": "ch_acme_1002",
+      "object": "charge",
+      "amount": 2900,
+      "amount_refunded": 0,
+      "currency": "usd",
+      "status": "succeeded",
+      "paid": true,
+      "refunded": false,
+      "created": 1786806240,
+      "description": "Acme Notes Pro — monthly",
+      "customer": "cus_acme_ada"
+    },
+    {
+      "id": "ch_acme_1003",
+      "object": "charge",
+      "amount": 2900,
+      "amount_refunded": 0,
+      "currency": "usd",
+      "status": "succeeded",
+      "paid": true,
+      "refunded": false,
+      "created": 1789485060,
+      "description": "Acme Notes Pro — monthly",
+      "customer": "cus_acme_ada"
+    },
+    {
+      "id": "ch_acme_1004",
+      "object": "charge",
+      "amount": 4900,
+      "amount_refunded": 0,
+      "currency": "usd",
+      "status": "succeeded",
+      "paid": true,
+      "refunded": false,
+      "created": 1780392600,
+      "description": "Acme Notes Family — annual",
+      "customer": "cus_acme_bao"
+    },
+    {
+      "id": "ch_acme_1005",
+      "object": "charge",
+      "amount": 800,
+      "amount_refunded": 200,
+      "currency": "usd",
+      "status": "succeeded",
+      "paid": true,
+      "refunded": false,
+      "created": 1789929720,
+      "description": "Acme Notes export add-on",
+      "customer": "cus_acme_bao"
+    },
+    {
+      "id": "ch_acme_1006",
+      "object": "charge",
+      "amount": 1500,
+      "amount_refunded": 1500,
+      "currency": "usd",
+      "status": "succeeded",
+      "paid": true,
+      "refunded": true,
+      "created": 1785668700,
+      "description": "Acme Notes extra seat",
+      "customer": "cus_acme_cam"
+    },
+    {
+      "id": "ch_acme_1007",
+      "object": "charge",
+      "amount": 2900,
+      "amount_refunded": 0,
+      "currency": "usd",
+      "status": "failed",
+      "paid": false,
+      "refunded": false,
+      "created": 1790583360,
+      "description": "Acme Notes Pro — monthly",
+      "customer": "cus_acme_cam"
+    },
+    {
+      "id": "ch_acme_1008",
+      "object": "charge",
+      "amount": 1200,
+      "amount_refunded": 0,
+      "currency": "usd",
+      "status": "pending",
+      "paid": false,
+      "refunded": false,
+      "created": 1791055320,
+      "description": "Acme Notes Pro — monthly",
+      "customer": "cus_acme_ada"
+    }
+  ]
+}
