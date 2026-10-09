@@ -28,6 +28,24 @@ class ProjectOut(BaseModel):
     name: str
 
 
+class ProjectDetail(BaseModel):
+    slug: str
+    name: str
+    panels: list[str]
+
+
+class ProjectCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    panels: list[str] = Field(min_length=1)
+
+
+class PanelOut(BaseModel):
+    key: str
+    label: str
+    group: str
+    description: str
+
+
 class ChargeOut(BaseModel):
     id: str
     amount: int

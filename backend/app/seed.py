@@ -14,7 +14,8 @@ from sqlalchemy.orm import Session
 
 from app.config import Settings, get_settings
 from app.database import get_session_factory
-from app.models import Project, ProjectSource, User
+from app.models import Project, ProjectPanel, ProjectSource, User
+from app.panels import SALES_DATA
 from app.security import hash_password
 from app.services.revenue import KIND_REVENUE
 
@@ -60,6 +61,18 @@ def seed(db: Session, settings: Settings) -> list[str]:
         notes.append(f"bound {ACME_REVENUE_ADAPTER} to {ACME_SLUG!r}")
     else:
         notes.append(f"revenue source for {ACME_SLUG!r} already present")
+
+    panel = db.scalar(
+        select(ProjectPanel).where(
+            ProjectPanel.project_id == project.id,
+            ProjectPanel.panel_key == SALES_DATA,
+        )
+    )
+    if panel is None:
+        db.add(ProjectPanel(project_id=project.id, panel_key=SALES_DATA))
+        notes.append(f"enabled {SALES_DATA} on {ACME_SLUG!r}")
+    else:
+        notes.append(f"{SALES_DATA} already enabled on {ACME_SLUG!r}")
 
     db.commit()
     return notes

@@ -36,6 +36,7 @@ Adapters turn one local fixture into typed records. They do not know about HTTP,
 | `sessions` | SHA-256 of a bearer token, plus expiry |
 | `projects` | A software project (`slug`, display `name`) |
 | `project_sources` | One adapter binding per project per kind |
+| `project_panels` | Panel keys the operator turned on for a project. No data source is attached |
 
 Kinds are `revenue`, `costs`, and `health`. A project has at most one row per kind. The row stores an `adapter_key` (for example `fixture.revenue`) and a `fixture_path` relative to `backend/`.
 

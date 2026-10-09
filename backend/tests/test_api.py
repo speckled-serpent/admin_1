@@ -52,7 +52,7 @@ def test_login_and_revenue_for_acme_notes(client: TestClient, session_factory: s
 
     projects = client.get("/api/projects", headers=headers)
     assert projects.status_code == 200
-    assert projects.json() == [{"slug": "acme-notes", "name": "Acme Notes"}]
+    assert projects.json() == [{"slug": "acme-notes", "name": "Acme Notes", "panels": ["sales-data"]}]
 
     revenue = client.get("/api/projects/acme-notes/revenue", headers=headers)
     assert revenue.status_code == 200
@@ -79,12 +79,14 @@ def test_seed_is_idempotent(session_factory: sessionmaker[Session]) -> None:
     _seed(session_factory)
     db = session_factory()
     try:
-        from app.models import Project, ProjectSource, User
+        from app.models import Project, ProjectPanel, ProjectSource, User
 
         assert db.query(User).count() == 1
         assert db.query(Project).count() == 1
         assert db.query(ProjectSource).count() == 1
         assert db.query(ProjectSource).one().adapter_key == "fixture.revenue"
+        assert db.query(ProjectPanel).count() == 1
+        assert db.query(ProjectPanel).one().panel_key == "sales-data"
     finally:
         db.close()
 

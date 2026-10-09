@@ -73,6 +73,3 @@ def project_revenue(db: Session, settings: Settings, slug: str) -> tuple[Project
     adapter = build_revenue_adapter(source.adapter_key, path)
     return project, summarize_charges(adapter.list_charges())
 
-
-def list_projects(db: Session) -> list[Project]:
-    return list(db.scalars(select(Project).order_by(Project.name)))

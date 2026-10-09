@@ -64,7 +64,9 @@ Open the app and sign in as the seeded user:
 - username: `dev`
 - password: `devpass`
 
-The home page shows Acme Notes revenue from `backend/fixtures/acme_notes_charges.json` (gross, refunds, net, and the charge list).
+After sign-in the top bar leads with Overview, then one tab per project. With no projects, the page says "No projects started yet. Create one". Creating a project asks for a name and which panels to turn on.
+
+The seed still adds Acme Notes. Open that tab and choose Sales data to see revenue from `backend/fixtures/acme_notes_charges.json` (gross, refunds, net, and the charge list). Other panels stay on a Coming soon page.
 
 ## Test
 
@@ -92,7 +94,9 @@ Cost and health fixtures are on disk for their adapters and are not attached to 
 | `POST` | `/api/auth/login` | Exchange username and password for a bearer token |
 | `POST` | `/api/auth/logout` | Revoke the current token |
 | `GET` | `/api/auth/me` | Current username |
-| `GET` | `/api/projects` | Projects |
+| `GET` | `/api/panel-catalog` | Panel checklist |
+| `GET` | `/api/projects` | Projects and their panels |
+| `POST` | `/api/projects` | Create a project and its panels |
 | `GET` | `/api/projects/{slug}/revenue` | One project's revenue |
 
 Money in JSON is integer minor units. `usd` `15900` is 159.00 dollars.

@@ -1,6 +1,17 @@
-export type Project = {
+export type ProjectRef = {
   slug: string;
   name: string;
+};
+
+export type Project = ProjectRef & {
+  panels: string[];
+};
+
+export type PanelDef = {
+  key: string;
+  label: string;
+  group: string;
+  description: string;
 };
 
 export type Charge = {
@@ -16,7 +27,7 @@ export type Charge = {
 };
 
 export type Revenue = {
-  project: Project;
+  project: ProjectRef;
   currency: string | null;
   gross_amount: number;
   refunded_amount: number;

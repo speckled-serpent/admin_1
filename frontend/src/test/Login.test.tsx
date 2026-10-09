@@ -60,7 +60,7 @@ describe("login", () => {
     await user.type(screen.getByLabelText("Password"), "devpass");
     await user.click(screen.getByRole("button", { name: "Sign in" }));
 
-    expect(await screen.findByText("No projects are seeded yet.")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "No projects started yet. Create one" })).toBeInTheDocument();
     expect(sessionStorage.getItem("admin1.token")).toBe("test-token");
   });
 

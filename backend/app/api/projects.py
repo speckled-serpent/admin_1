@@ -10,23 +10,54 @@ from sqlalchemy.orm import Session
 from app.config import Settings, get_settings
 from app.database import get_db
 from app.deps import get_current_user
-from app.errors import FixtureError, MixedCurrencyError, ProjectNotFound, SourceNotConfigured, UnknownAdapter
-from app.models import User
-from app.schemas import ChargeOut, ProjectOut, RevenueOut
-from app.services.revenue import list_projects, project_revenue
+from app.errors import (
+    FixtureError,
+    InvalidProject,
+    MixedCurrencyError,
+    ProjectNotFound,
+    SourceNotConfigured,
+    UnknownAdapter,
+)
+from app.models import Project, User
+from app.panels import PANELS
+from app.schemas import ChargeOut, PanelOut, ProjectCreate, ProjectDetail, ProjectOut, RevenueOut
+from app.services.projects import create_project, list_projects, panel_keys_for
+from app.services.revenue import project_revenue
 
-router = APIRouter(prefix="/projects", tags=["projects"])
+router = APIRouter(tags=["projects"])
 
 
-@router.get("", response_model=list[ProjectOut])
+def _detail(project: Project) -> ProjectDetail:
+    return ProjectDetail(slug=project.slug, name=project.name, panels=panel_keys_for(project))
+
+
+@router.get("/panel-catalog", response_model=list[PanelOut])
+def panel_catalog_route(_user: Annotated[User, Depends(get_current_user)]) -> list[PanelOut]:
+    return [PanelOut(key=panel.key, label=panel.label, group=panel.group, description=panel.description) for panel in PANELS]
+
+
+@router.get("/projects", response_model=list[ProjectDetail])
 def projects_route(
     db: Annotated[Session, Depends(get_db)],
     _user: Annotated[User, Depends(get_current_user)],
-) -> list[ProjectOut]:
-    return [ProjectOut(slug=project.slug, name=project.name) for project in list_projects(db)]
+) -> list[ProjectDetail]:
+    return [_detail(project) for project in list_projects(db)]
 
 
-@router.get("/{slug}/revenue", response_model=RevenueOut)
+@router.post("/projects", response_model=ProjectDetail, status_code=201)
+def create_project_route(
+    body: ProjectCreate,
+    db: Annotated[Session, Depends(get_db)],
+    _user: Annotated[User, Depends(get_current_user)],
+) -> ProjectDetail:
+    try:
+        project = create_project(db, body.name, body.panels)
+    except InvalidProject as exc:
+        raise HTTPException(status_code=422, detail=exc.detail) from None
+    return _detail(project)
+
+
+@router.get("/projects/{slug}/revenue", response_model=RevenueOut)
 def revenue_route(
     slug: str,
     db: Annotated[Session, Depends(get_db)],

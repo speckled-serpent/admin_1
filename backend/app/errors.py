@@ -9,6 +9,12 @@ class InvalidCredentials(AppError):
     pass
 
 
+class InvalidProject(AppError):
+    def __init__(self, detail: str) -> None:
+        self.detail = detail
+        super().__init__(detail)
+
+
 class ProjectNotFound(AppError):
     pass
 

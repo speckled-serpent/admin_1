@@ -46,6 +46,7 @@ class Project(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
 
     sources: Mapped[list[ProjectSource]] = relationship(back_populates="project")
+    panels: Mapped[list[ProjectPanel]] = relationship(back_populates="project")
 
 
 class ProjectSource(Base):
@@ -66,3 +67,17 @@ class ProjectSource(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
 
     project: Mapped[Project] = relationship(back_populates="sources")
+
+
+class ProjectPanel(Base):
+    """A panel the operator turned on for a project. No live data is attached."""
+
+    __tablename__ = "project_panels"
+    __table_args__ = (UniqueConstraint("project_id", "panel_key", name="uq_project_panel_key"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
+    panel_key: Mapped[str] = mapped_column(String(64), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+
+    project: Mapped[Project] = relationship(back_populates="panels")

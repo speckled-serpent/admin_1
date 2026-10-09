@@ -33,7 +33,8 @@ Vitest uses jsdom. Tests stub `fetch`. They must not call the backend and must n
 
 - `src/test/format.test.ts` locks display of minor units and charge labels.
 - `src/test/Login.test.tsx` covers a successful sign-in, a 401 message, and the redirect when no token is stored.
-- `src/test/Dashboard.test.tsx` renders the Acme Notes totals from a stubbed payload.
+- `src/test/projects.test.tsx` covers the empty state, the create-project flow, and the panel rail.
+- `src/test/Dashboard.test.tsx` renders the Acme Notes revenue totals from the Sales data panel.
 
 Prefer queries by role and visible text. The display locale is `en-US` so `$159.00` is stable.
 
