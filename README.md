@@ -13,10 +13,10 @@ backend/          FastAPI, SQLAlchemy, Alembic, pytest
   alembic/        schema migrations
   tests/
 frontend/         React, Vite, TypeScript, vitest
-docs/             architecture, adapters, testing, roadmap
+docs/             project goal, architecture, adapters, testing, roadmap
 ```
 
-Conventions live in [docs/architecture.md](docs/architecture.md), [docs/adapters.md](docs/adapters.md), and [docs/testing.md](docs/testing.md). Work that is deliberately missing is listed in [docs/roadmap.md](docs/roadmap.md).
+The living goal and scope is [docs/project.md](docs/project.md). Conventions live in [docs/architecture.md](docs/architecture.md), [docs/adapters.md](docs/adapters.md), and [docs/testing.md](docs/testing.md). Work still to do, and the constraints on it, are listed in [docs/roadmap.md](docs/roadmap.md).
 
 ## Prerequisites
 
