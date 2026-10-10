@@ -1,19 +1,6 @@
 # admin_1
 
-A local-first admin panel for monitoring several software projects on one machine. You sign in, create a project, choose the panels it needs, and attach a data source to each one. A fresh login has no projects.
-
-What is in place:
-
-- Local username and password sessions, stored in SQLite and migrated with Alembic
-- Projects with a selectable panel list, then an onboarding step that picks a data source for each panel
-- Project-level connections. A connection is a named Push source with an API key, or an HTTP health URL. More than one panel can use the same connection
-- Push ingest. The key is shown once and only its hash is stored. Sections in the payload (`health`, `users`, `revenue`, `costs`) update the matching panel type on that connection
-- An HTTP health pull: one GET through an injectable client, so checks can be tested without opening a socket
-- Panel settings on their own page, opened from a cog on the project rail, including a connection test and the last received time
-- Delete project and delete panel. Each one asks you to type DELETE
-- `make test` and `make lint` (pytest, vitest, Ruff, and ESLint). Both run offline after dependencies are installed
-
-The pages read SQLite. They do not call out to a network while you are looking at them. There is no external API, CDN, font host, or telemetry. Fake data sources still read local fixture files. Sales data shows fixture revenue only when that panel is on Fake and a revenue source is bound. System health can show the latest status from a push snapshot or a health check. Panels with no data yet stay on Coming soon.
+admin_1 is an admin panel that consolidates multiple projects into one service. The goal of this project is to build a working admin panel that brings multiple projects together so you can review them quickly, all at once. Many panels are still under development.
 
 ## Layout
 
