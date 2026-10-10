@@ -6,16 +6,18 @@ The skeleton already has local login, a project registry, three local adapter in
 
 ## Navigation, empty state, and creating a project
 
-Not built. Target shape is in [project.md](project.md):
+The basic shell is in place. See [project.md](project.md).
 
 - Top bar: **Overview** first, then one tab per project.
 - Empty copy: "No projects started yet. Create one", with a **Create new project** button under it.
 - A persistent floating **+** / **Create New Project** on every authenticated page.
-- Create flow: name the project, then pick categories from the checklist. Each chosen category has a data-source setting.
+- Create flow: name the project, then toggle panels. Confirm stores the project and its panel keys. The project tab opens with those panels in a rail. Every panel is Coming soon, except Sales data when that project already has a revenue fixture.
 
-The checklist is wider than today's three adapter kinds. New categories (users, the rest of server, product metrics, marketing, support, logistics) need their own adapter interface and a local fake before they appear in the UI. Logistics stays opt-in for projects that move physical goods.
+Still open:
 
-Editing an existing project's categories in the UI is also still open.
+- A data-source setting for each chosen panel. Toggles only record that the panel is wanted.
+- Editing an existing project's panels.
+- Real adapters for users, the rest of server, product metrics, marketing, support, and logistics. Logistics stays opt-in for projects that move physical goods.
 
 ## A second source adapter
 

@@ -80,16 +80,17 @@ The skeleton and this document are both evolving. Update this section when a tas
 **Already in the skeleton**
 
 - Local username/password sessions and one seeded dev user
-- A project row and a revenue source binding for one fictional project
+- Overview tab, one tab per project, the empty-state copy, and the floating create button
+- Create-project flow: a name plus the panel checklist, stored on the project
+- Project page with a rail of the selected panels. Panels show Coming soon
+- A project row and a revenue source binding for one fictional project. Its Sales data panel shows that fixture revenue
 - Adapter interfaces for revenue, costs, and server health, each with a local fake
-- One wired view: that project's revenue (gross, refunds, net, charge list)
 - Offline boot and tests (`make test`)
 
 **Not yet built**
 
-- Overview-first navigation, per-project tabs, the empty-state copy, and the floating create button
-- The create-project checklist and per-category data-source settings
-- Categories beyond the three adapter interfaces (users, the rest of server, optional product / marketing / support / logistics)
+- A data-source setting on each chosen panel
+- Live data for panels other than the one revenue fixture
 - Wiring cost and health fakes through to a page
 - A second source adapter, and handling of bad or partial fixture data
 - Cross-project totals, date ranges, and currency conversion

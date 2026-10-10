@@ -56,7 +56,7 @@ beforeEach(() => {
   vi.restoreAllMocks();
 });
 
-describe("dashboard", () => {
+describe("sales data panel", () => {
   it("shows the seeded project's revenue", async () => {
     sessionStorage.setItem("admin1.token", "test-token");
     vi.stubGlobal(
@@ -67,7 +67,7 @@ describe("dashboard", () => {
           return json({ username: "dev" });
         }
         if (url === "/api/projects") {
-          return json([{ slug: "acme-notes", name: "Acme Notes" }]);
+          return json([{ slug: "acme-notes", name: "Acme Notes", panels: ["sales-data"] }]);
         }
         if (url === "/api/projects/acme-notes/revenue") {
           return json(revenue);
@@ -77,7 +77,7 @@ describe("dashboard", () => {
     );
 
     render(
-      <MemoryRouter initialEntries={["/"]}>
+      <MemoryRouter initialEntries={["/projects/acme-notes"]}>
         <AuthProvider>
           <AppRoutes />
         </AuthProvider>
@@ -85,7 +85,7 @@ describe("dashboard", () => {
     );
 
     expect(await screen.findByRole("heading", { name: "Acme Notes" })).toBeInTheDocument();
-    expect(screen.getByRole("article", { name: "Gross" })).toHaveTextContent("$159.00");
+    expect(await screen.findByRole("article", { name: "Gross" })).toHaveTextContent("$159.00");
     expect(screen.getByRole("article", { name: "Refunded" })).toHaveTextContent("$17.00");
     expect(screen.getByRole("article", { name: "Net" })).toHaveTextContent("$142.00");
     expect(screen.getByText("Acme Notes export add-on")).toBeInTheDocument();
@@ -96,9 +96,9 @@ describe("dashboard", () => {
   });
 });
 
-function json(body: unknown): Response {
+function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
-    status: 200,
+    status,
     headers: { "Content-Type": "application/json" },
   });
 }
