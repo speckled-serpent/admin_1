@@ -20,3 +20,14 @@ dev = [
 testpaths = ["tests"]
 addopts = "-q"
 pythonpath = ["."]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+src = ["app", "tests"]
+
+[tool.ruff.lint]
+# Pyflakes and pycodestyle errors. Import sorting and pyupgrade rewrites are
+# not enabled; those would touch generated migrations and most modules.
+select = ["E", "F"]
+ignore = ["E501"]

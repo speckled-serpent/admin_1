@@ -24,6 +24,7 @@ pydantic_core==2.50.0
 Pygments==2.21.0
 pycparser==3.11
 pytest==9.1.1
+ruff==0.17.0
 SQLAlchemy==2.1.4
 starlette==1.7.0
 truststore==0.10.4

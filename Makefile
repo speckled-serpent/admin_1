@@ -1,4 +1,4 @@
-.PHONY: install setup test test-backend test-frontend migrate seed run-backend run-frontend
+.PHONY: install setup test test-backend test-frontend lint lint-backend lint-frontend migrate seed run-backend run-frontend
 
 install:
 	@if [ ! -x backend/.venv/bin/python ] || ! backend/.venv/bin/python -m pip --version >/dev/null 2>&1; then \
@@ -25,6 +25,14 @@ test-backend:
 
 test-frontend:
 	cd frontend && npm test && npm run typecheck
+
+lint: lint-backend lint-frontend
+
+lint-backend:
+	cd backend && .venv/bin/ruff check .
+
+lint-frontend:
+	cd frontend && npm run lint
 
 run-backend:
 	cd backend && .venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port 8000

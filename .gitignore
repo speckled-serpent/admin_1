@@ -23,6 +23,11 @@ frontend/dist/
 frontend/coverage/
 *.tsbuildinfo
 
+# Build output
+dist/
+build/
+coverage/
+
 # Editor / OS
 .DS_Store
 .idea/
