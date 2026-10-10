@@ -36,6 +36,8 @@ Vitest uses jsdom. Tests stub `fetch`. They must not call the backend and must n
 - `src/test/projects.test.tsx` covers the empty state, the create-project flow, and the panel rail.
 - `src/test/Dashboard.test.tsx` renders revenue totals from the Sales data panel.
 - `src/test/deleteProject.test.tsx` covers the delete confirmation: disabled until `DELETE`, Enter submits, Cancel and Escape close.
+- `src/test/dataSource.test.tsx` covers the panel data-source control: Fake, Push, HTTP health only where it applies, a key shown once, and Test connection.
+- `tests/test_connections.py` covers API key hashing, ingest auth, good, bad, and partial payloads, and the HTTP health connector with a fake transport. Those tests do not open a socket.
 
 Prefer queries by role and visible text. The display locale is `en-US` so `$159.00` is stable.
 

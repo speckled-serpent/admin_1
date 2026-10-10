@@ -49,6 +49,9 @@ describe("delete project", () => {
         if (url === "/api/projects") {
           return json([{ slug: "lumen", name: "Lumen", panels: ["logs"] }]);
         }
+        if (url.endsWith("/data-sources")) {
+          return json({ api_key: null, panels: [] });
+        }
         throw new Error(`unexpected fetch ${url}`);
       }),
     );
@@ -91,6 +94,9 @@ describe("delete project", () => {
         if (url === "/api/projects") {
           return json([{ slug: "lumen", name: "Lumen", panels: ["logs"] }]);
         }
+        if (url.endsWith("/data-sources")) {
+          return json({ api_key: null, panels: [] });
+        }
         throw new Error(`unexpected fetch ${url}`);
       }),
     );
@@ -118,6 +124,9 @@ describe("delete project", () => {
         }
         if (url === "/api/projects") {
           return json([{ slug: "lumen", name: "Lumen", panels: ["logs"] }]);
+        }
+        if (url.endsWith("/data-sources")) {
+          return json({ api_key: null, panels: [] });
         }
         throw new Error(`unexpected fetch ${url}`);
       }),

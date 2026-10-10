@@ -1,6 +1,6 @@
 # Roadmap
 
-What is still missing, and the constraints later tasks must keep. The goal they serve is [project.md](project.md). None of the items below are implemented. Do not treat this file as permission to widen a task past what it asks for.
+What is still missing, and the constraints later tasks must keep. The goal they serve is [project.md](project.md). A section that says a slice is already in place is the exception. Do not treat this file as permission to widen a task past what it asks for.
 
 The skeleton already has local login, a project registry, three local adapter interfaces (revenue, costs, health), and one wired revenue view. See the status section in [project.md](project.md).
 
@@ -16,8 +16,17 @@ The basic shell is in place. See [project.md](project.md).
 
 Still open:
 
-- A data-source setting for each chosen panel. Toggles only record that the panel is wanted.
 - Editing an existing project's panels.
+
+The first data-source slice is in place. See [project.md](project.md) and [connectors.md](connectors.md). Each panel can be Fake, Push, or, on System health, HTTP health. Push writes local snapshots. HTTP health is one GET through an injectable client.
+
+Leave these for a later task:
+
+- Stripe and cloud-cost connectors
+- A reporter SDK that sends the push payload
+- Scheduler hardening (the poll function is not a running scheduler)
+- Cross-project rollups
+- Alerts
 - Real adapters for users, the rest of server, product metrics, marketing, support, and logistics. Logistics stays opt-in for projects that move physical goods.
 
 ## A second source adapter
@@ -46,5 +55,5 @@ Not built. The skeleton has one seeded local user and no screen to add, remove, 
 
 ## Also unchanged
 
-- Background workers and scheduled polls.
+- A background worker. `poll_due_http_health` is the hook a later scheduler should call. This process does not start one. Test connection checks immediately.
 - Production hosting, containers, or a reverse proxy. Local uvicorn and Vite are the supported run.

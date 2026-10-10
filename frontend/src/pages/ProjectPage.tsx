@@ -1,12 +1,14 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ApiError, api } from "../api";
 import { useAuth } from "../auth";
+import { DataSourceCard } from "../components/DataSourceCard";
 import { RevenueView } from "../components/RevenueView";
 import { useShell } from "../shell";
 import type { Revenue } from "../types";
 
 const SALES_DATA = "sales-data";
+const SYSTEM_HEALTH = "system-health";
 const DELETE_PHRASE = "DELETE";
 
 export function ProjectPage() {
@@ -23,6 +25,14 @@ export function ProjectPage() {
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [healthStatus, setHealthStatus] = useState<string | null | undefined>(undefined);
+  const onHealthStatus = useCallback((status: string | null) => {
+    setHealthStatus(status);
+  }, []);
+
+  useEffect(() => {
+    setHealthStatus(selected === SYSTEM_HEALTH ? undefined : null);
+  }, [selected]);
 
   useEffect(() => {
     if (!token || !project || selected !== SALES_DATA) {
@@ -84,7 +94,8 @@ export function ProjectPage() {
 
   const showRevenue = selected === SALES_DATA && revenueState === "ready" && revenue !== null;
   const waitingOnRevenue = selected === SALES_DATA && (revenueState === "idle" || revenueState === "loading");
-  const showSoon = selected !== "" && !showRevenue && !waitingOnRevenue && revenueState !== "error";
+  const showHealth = selected === SYSTEM_HEALTH && Boolean(healthStatus);
+  const showSoon = selected !== "" && !showRevenue && !waitingOnRevenue && !showHealth && revenueState !== "error";
 
   return (
     <div className="workspace">
@@ -115,6 +126,9 @@ export function ProjectPage() {
       </aside>
       <main className="workspace-main">
         <h1>{project.name}</h1>
+        {token ? (
+          <DataSourceCard slug={project.slug} panelKey={selected} token={token} onHealthStatus={onHealthStatus} />
+        ) : null}
         {revenueState === "loading" ? <p className="muted">Loading revenue…</p> : null}
         {revenueState === "error" && revenueError ? (
           <p className="form-error" role="alert">
@@ -122,6 +136,12 @@ export function ProjectPage() {
           </p>
         ) : null}
         {showRevenue && revenue ? <RevenueView revenue={revenue} /> : null}
+        {showHealth ? (
+          <section className="coming-soon">
+            <h2>Latest status</h2>
+            <p>{healthStatus}</p>
+          </section>
+        ) : null}
         {showSoon ? (
           <section className="coming-soon">
             <h2>Coming soon</h2>

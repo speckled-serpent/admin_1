@@ -29,6 +29,7 @@ class Settings:
     dev_username: str
     dev_password: str
     cors_origins: tuple[str, ...]
+    connector_master_key: str
     backend_root: Path
 
     @property
@@ -53,5 +54,6 @@ def get_settings() -> Settings:
         dev_username=os.environ.get("DEV_USERNAME", "dev"),
         dev_password=os.environ.get("DEV_PASSWORD", "devpass"),
         cors_origins=origins,
+        connector_master_key=os.environ.get("CONNECTOR_MASTER_KEY", ""),
         backend_root=BACKEND_ROOT,
     )

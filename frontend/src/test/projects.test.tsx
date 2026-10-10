@@ -50,6 +50,9 @@ describe("projects", () => {
         if (url === "/api/projects") {
           return json([]);
         }
+        if (url.endsWith("/data-sources")) {
+          return json({ api_key: null, panels: [] });
+        }
         throw new Error(`unexpected fetch ${url}`);
       }),
     );
@@ -85,6 +88,9 @@ describe("projects", () => {
         if (url === "/api/projects") {
           return json(projects);
         }
+        if (url.endsWith("/data-sources")) {
+          return json({ api_key: null, panels: [] });
+        }
         throw new Error(`unexpected fetch ${url}`);
       }),
     );
@@ -116,6 +122,9 @@ describe("projects", () => {
         }
         if (url === "/api/projects") {
           return json([{ slug: "lumen", name: "Lumen", panels: ["system-health", "logs"] }]);
+        }
+        if (url.endsWith("/data-sources")) {
+          return json({ api_key: null, panels: [] });
         }
         throw new Error(`unexpected fetch ${url}`);
       }),

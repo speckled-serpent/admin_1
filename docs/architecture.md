@@ -68,7 +68,9 @@ The seed creates a single local user. There is no signup page and no remote iden
 
 `GET /api/projects/{slug}/revenue` reads a `project_sources` row for that project and returns the summary plus every charge, newest first. The default seed does not insert a project or that row. Tests bind `fixture.revenue` to `fixtures/acme_notes_charges.json` when they need the numbers.
 
-`DELETE /api/projects/{slug}` removes the project. Panels and sources go with it.
+`DELETE /api/projects/{slug}` removes the project. Panels, sources, API keys, and snapshots go with it.
+
+Push ingest and the HTTP health connector write local rows. The dashboard does not call the network to render them. See [connectors.md](connectors.md).
 
 Cost and health adapters and their fixture files exist so a later task can bind them. They have no service, route, or page yet. See [roadmap.md](roadmap.md).
 

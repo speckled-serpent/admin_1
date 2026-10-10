@@ -33,3 +33,15 @@ class FixtureError(AppError):
 
 class MixedCurrencyError(AppError):
     pass
+
+
+class InvalidPayload(AppError):
+    def __init__(self, detail: str) -> None:
+        self.detail = detail
+        super().__init__(detail)
+
+
+class InvalidDataSource(AppError):
+    def __init__(self, detail: str) -> None:
+        self.detail = detail
+        super().__init__(detail)

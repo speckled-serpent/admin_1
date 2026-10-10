@@ -58,6 +58,53 @@ class ChargeOut(BaseModel):
     customer: str | None = None
 
 
+class PanelSourceOut(BaseModel):
+    panel_key: str
+    mode: str
+    allowed_modes: list[str]
+    url: str | None
+    expected_status: int | None
+    timeout_seconds: int | None
+    has_secret: bool
+    last_received_at: datetime | None
+    last_status: str | None
+
+
+class ApiKeyOut(BaseModel):
+    prefix: str
+    created_at: datetime
+
+
+class DataSourcesOut(BaseModel):
+    api_key: ApiKeyOut | None
+    panels: list[PanelSourceOut]
+
+
+class DataSourceUpdate(BaseModel):
+    mode: str
+    url: str | None = None
+    expected_status: int | None = None
+    timeout_seconds: int | None = None
+    secret: str | None = None
+
+
+class IssuedApiKeyOut(BaseModel):
+    key: str
+    prefix: str
+    created_at: datetime
+
+
+class IngestOut(BaseModel):
+    accepted: list[str]
+
+
+class ConnectionTestOut(BaseModel):
+    ok: bool
+    detail: str
+    last_received_at: datetime | None
+    last_status: str | None
+
+
 class RevenueOut(BaseModel):
     project: ProjectOut
     currency: str | None
