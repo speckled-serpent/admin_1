@@ -1,4 +1,4 @@
-"""Project list and the one wired revenue view."""
+"""Project list, panel changes, and fixture revenue for Sales data set to Fake."""
 
 from __future__ import annotations
 

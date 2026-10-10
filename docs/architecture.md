@@ -1,6 +1,6 @@
 # Architecture
 
-admin_1 is a local-first panel for one person's software projects. It shows revenue for a project from data that already lives on disk. It does not call external APIs, CDNs, font hosts, or telemetry.
+admin_1 is an admin panel that consolidates multiple projects into one service. Pages read SQLite and local fixture files. They do not call CDNs, font hosts, or telemetry. An HTTP health connection performs one GET when a check runs. That result is stored, and System health renders the stored status.
 
 FastAPI's built-in telemetry is turned off (`tracing`, `metrics`, `logs`, and exporter auto-configuration). Do not point the process at an OTLP endpoint.
 
@@ -8,7 +8,7 @@ The process split is fixed:
 
 - `backend/` is a FastAPI app. SQLite holds users, sessions, projects, and source bindings. Alembic owns the schema.
 - `frontend/` is a React + Vite + TypeScript client. The dev server proxies `/api` to the backend, so the browser talks only to localhost.
-- `backend/fixtures/` holds JSON that stands in for outside systems. Adapters read those files. Nothing in the request path opens a socket to fetch them.
+- `backend/fixtures/` holds JSON that stands in for outside systems. Adapters read those files. Fixture reads do not open a socket. The HTTP health check is the request that does: one GET through an injectable client.
 
 ## Layers
 
@@ -19,12 +19,12 @@ browser
       -> services           backend/app/services
         -> adapters         backend/app/adapters
           -> fixtures       backend/fixtures
-        -> SQLite           users, sessions, projects, project_sources
+        -> SQLite           users, sessions, projects, panels, connections, ingest_snapshots
 ```
 
 Routers authenticate the caller, validate the payload, and map domain errors to HTTP status codes. They do not total money and they do not open fixture files.
 
-Services load a project and its source binding, build the adapter the binding names, and apply accounting rules.
+Services load a project and the panel's data source, build the adapter that source selects, and apply accounting rules.
 
 Adapters turn one local fixture into typed records. They do not know about HTTP, sessions, or summaries.
 
@@ -35,16 +35,16 @@ Adapters turn one local fixture into typed records. They do not know about HTTP,
 | `users` | Local username and password hash |
 | `sessions` | SHA-256 of a bearer token, plus expiry |
 | `projects` | A software project (`slug`, display `name`) |
-| `project_sources` | One adapter binding per project per kind |
+| `project_sources` | Optional adapter binding per project per kind. Create, seed, and panel settings do not write it. Sales data on Fake does not read it |
 | `project_panels` | Panel keys the operator turned on for a project |
 | `connections` | A named Push or HTTP health source. Credentials live here |
 | `connection_api_keys` | SHA-256 of a push connection's ingest key |
 | `panel_data_sources` | Fake, or a `connection_id` the panel reads |
 | `ingest_snapshots` | Latest accepted push section for one connection and kind |
 
-Kinds are `revenue`, `costs`, and `health`. A project has at most one row per kind. The row stores an `adapter_key` (for example `fixture.revenue`) and a `fixture_path` relative to `backend/`.
+`project_sources.kind` is `revenue`, `costs`, or `health`. A project has at most one row per kind. The row stores an `adapter_key` (for example `fixture.revenue`) and a `fixture_path` relative to `backend/`. The running Sales data path does not use that row.
 
-Charge records, cost lines, and health pings are not copied into SQLite. The fixture file is the source of truth, so a bad parse shows up in the adapter instead of hiding in a cache table.
+Charge records, cost lines, and health pings from fixture files are not copied into SQLite. The fixture file is the source of truth, so a bad parse shows up in the adapter instead of hiding in a cache table. Accepted push sections are stored: each one is a row in `ingest_snapshots`, keyed by connection and kind (`health`, `users`, `revenue`, `costs`).
 
 ## Money
 
@@ -68,15 +68,15 @@ Login returns a random bearer token. Only the SHA-256 of that token is stored. P
 
 The seed creates a single local user. There is no signup page and no remote identity provider.
 
-## The one wired path
+## Sales data and system health
 
-`GET /api/projects/{slug}/revenue` reads a `project_sources` row for that project and returns the summary plus every charge, newest first. The default seed does not insert a project or that row. Tests bind `fixture.revenue` to `fixtures/acme_notes_charges.json` when they need the numbers.
+`GET /api/projects/{slug}/revenue` returns the summary plus every charge, newest first, when that project's Sales data panel is set to Fake. It reads `fixtures/acme_notes_charges.json` through `fixture.revenue`. A missing Sales data panel, or a Sales data panel that is not Fake, responds with 404. The default seed does not create a project.
 
 `DELETE /api/projects/{slug}` removes the project. Panels, sources, connections, API keys, and snapshots go with it. `DELETE /api/projects/{slug}/panels/{panel}` removes that panel only.
 
-Push ingest and the HTTP health connector write local rows. The dashboard does not call the network to render them. See [connectors.md](connectors.md).
+Push ingest stores every accepted section in `ingest_snapshots`. System health renders the latest `health` status from that snapshot or from an HTTP health check. `users`, `revenue`, and `costs` are stored and are not rendered. The page reads those stored rows. It does not call the network to draw them. See [connectors.md](connectors.md).
 
-Cost and health adapters and their fixture files exist so a later task can bind them. They have no service, route, or page yet. See [roadmap.md](roadmap.md).
+Cost and health fixture adapters read their JSON files. They have no service, route, or page. See [roadmap.md](roadmap.md).
 
 ## Boot
 

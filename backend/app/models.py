@@ -88,7 +88,7 @@ class ProjectSource(Base):
 
 
 class ProjectPanel(Base):
-    """A panel the operator turned on for a project. No live data is attached."""
+    """A panel the operator turned on for a project."""
 
     __tablename__ = "project_panels"
     __table_args__ = (UniqueConstraint("project_id", "panel_key", name="uq_project_panel_key"),)

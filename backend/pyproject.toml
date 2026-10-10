@@ -1,7 +1,7 @@
 [project]
 name = "admin1"
 version = "0.1.0"
-description = "Local-first admin panel skeleton for a user's software projects."
+description = "Admin panel that consolidates multiple projects into one service."
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.115",

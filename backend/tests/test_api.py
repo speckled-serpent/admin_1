@@ -33,31 +33,7 @@ def test_health_is_public(client: TestClient) -> None:
     assert response.json() == {"status": "ok"}
 
 
-def _bind_revenue_fixture(session_factory: sessionmaker[Session]) -> None:
-    """Attach the charges fixture to a project the default seed does not create."""
-    from app.models import Project, ProjectPanel, ProjectSource
-    from app.services.revenue import KIND_REVENUE
-
-    db = session_factory()
-    try:
-        project = Project(slug="harbor", name="Harbor")
-        db.add(project)
-        db.flush()
-        db.add(
-            ProjectSource(
-                project_id=project.id,
-                kind=KIND_REVENUE,
-                adapter_key="fixture.revenue",
-                fixture_path="fixtures/acme_notes_charges.json",
-            )
-        )
-        db.add(ProjectPanel(project_id=project.id, panel_key="sales-data"))
-        db.commit()
-    finally:
-        db.close()
-
-
-def test_login_and_revenue_for_bound_fixture(client: TestClient, session_factory: sessionmaker[Session]) -> None:
+def test_login_and_revenue_for_fake_sales_panel(client: TestClient, session_factory: sessionmaker[Session]) -> None:
     _seed(session_factory)
     denied = client.get("/api/projects/harbor/revenue")
     assert denied.status_code == 401
@@ -78,7 +54,12 @@ def test_login_and_revenue_for_bound_fixture(client: TestClient, session_factory
     assert projects.status_code == 200
     assert projects.json() == []
 
-    _bind_revenue_fixture(session_factory)
+    created = client.post(
+        "/api/projects",
+        headers=headers,
+        json={"name": "Harbor", "panels": ["sales-data"]},
+    )
+    assert created.status_code == 201
     revenue = client.get("/api/projects/harbor/revenue", headers=headers)
     assert revenue.status_code == 200
     body = revenue.json()

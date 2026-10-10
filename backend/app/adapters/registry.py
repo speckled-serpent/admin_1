@@ -21,7 +21,7 @@ _HEALTH: dict[str, type[FixtureHealthAdapter]] = {
 
 
 def resolve_fixture_path(settings: Settings, relative: str) -> Path:
-    """Resolve a project_sources.fixture_path and keep it inside fixtures/."""
+    """Resolve a fixture path and keep it inside fixtures/."""
     fixtures_root = settings.fixtures_dir.resolve()
     candidate = (settings.backend_root / relative).resolve()
     if not candidate.is_relative_to(fixtures_root):
