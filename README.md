@@ -16,9 +16,11 @@ frontend/         React, Vite, TypeScript, vitest
 docs/             project goal, architecture, adapters, testing, roadmap
 ```
 
-The living goal and scope is [docs/project.md](docs/project.md). Conventions live in [docs/architecture.md](docs/architecture.md), [docs/adapters.md](docs/adapters.md), and [docs/testing.md](docs/testing.md). Work still to do, and the constraints on it, are listed in [docs/roadmap.md](docs/roadmap.md).
+The living goal and scope is [docs/project.md](docs/project.md). Local boot, reset, and port troubleshooting are in [docs/local_setup.md](docs/local_setup.md). Conventions live in [docs/architecture.md](docs/architecture.md), [docs/adapters.md](docs/adapters.md), and [docs/testing.md](docs/testing.md). Work still to do, and the constraints on it, are listed in [docs/roadmap.md](docs/roadmap.md).
 
 ## Prerequisites
+
+Step-by-step boot from `~/projects/admin_1` is in [docs/local_setup.md](docs/local_setup.md).
 
 - Python 3.11+ (the standard library `venv` module; on Debian/Ubuntu that is the `python3-venv` package)
 - Node.js 22+
