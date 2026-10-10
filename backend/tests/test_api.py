@@ -33,9 +33,33 @@ def test_health_is_public(client: TestClient) -> None:
     assert response.json() == {"status": "ok"}
 
 
-def test_login_and_revenue_for_acme_notes(client: TestClient, session_factory: sessionmaker[Session]) -> None:
+def _bind_revenue_fixture(session_factory: sessionmaker[Session]) -> None:
+    """Attach the charges fixture to a project the default seed does not create."""
+    from app.models import Project, ProjectPanel, ProjectSource
+    from app.services.revenue import KIND_REVENUE
+
+    db = session_factory()
+    try:
+        project = Project(slug="harbor", name="Harbor")
+        db.add(project)
+        db.flush()
+        db.add(
+            ProjectSource(
+                project_id=project.id,
+                kind=KIND_REVENUE,
+                adapter_key="fixture.revenue",
+                fixture_path="fixtures/acme_notes_charges.json",
+            )
+        )
+        db.add(ProjectPanel(project_id=project.id, panel_key="sales-data"))
+        db.commit()
+    finally:
+        db.close()
+
+
+def test_login_and_revenue_for_bound_fixture(client: TestClient, session_factory: sessionmaker[Session]) -> None:
     _seed(session_factory)
-    denied = client.get("/api/projects/acme-notes/revenue")
+    denied = client.get("/api/projects/harbor/revenue")
     assert denied.status_code == 401
 
     bad = client.post("/api/auth/login", json={"username": "dev", "password": "nope"})
@@ -52,12 +76,13 @@ def test_login_and_revenue_for_acme_notes(client: TestClient, session_factory: s
 
     projects = client.get("/api/projects", headers=headers)
     assert projects.status_code == 200
-    assert projects.json() == [{"slug": "acme-notes", "name": "Acme Notes", "panels": ["sales-data"]}]
+    assert projects.json() == []
 
-    revenue = client.get("/api/projects/acme-notes/revenue", headers=headers)
+    _bind_revenue_fixture(session_factory)
+    revenue = client.get("/api/projects/harbor/revenue", headers=headers)
     assert revenue.status_code == 200
     body = revenue.json()
-    assert body["project"] == {"slug": "acme-notes", "name": "Acme Notes"}
+    assert body["project"] == {"slug": "harbor", "name": "Harbor"}
     assert body["currency"] == "usd"
     assert body["gross_amount"] == 15900
     assert body["refunded_amount"] == 1700
@@ -82,11 +107,9 @@ def test_seed_is_idempotent(session_factory: sessionmaker[Session]) -> None:
         from app.models import Project, ProjectPanel, ProjectSource, User
 
         assert db.query(User).count() == 1
-        assert db.query(Project).count() == 1
-        assert db.query(ProjectSource).count() == 1
-        assert db.query(ProjectSource).one().adapter_key == "fixture.revenue"
-        assert db.query(ProjectPanel).count() == 1
-        assert db.query(ProjectPanel).one().panel_key == "sales-data"
+        assert db.query(Project).count() == 0
+        assert db.query(ProjectSource).count() == 0
+        assert db.query(ProjectPanel).count() == 0
     finally:
         db.close()
 

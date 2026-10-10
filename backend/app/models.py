@@ -45,8 +45,14 @@ class Project(Base):
     name: Mapped[str] = mapped_column(String(120), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
 
-    sources: Mapped[list[ProjectSource]] = relationship(back_populates="project")
-    panels: Mapped[list[ProjectPanel]] = relationship(back_populates="project")
+    sources: Mapped[list[ProjectSource]] = relationship(
+        back_populates="project",
+        cascade="all, delete-orphan",
+    )
+    panels: Mapped[list[ProjectPanel]] = relationship(
+        back_populates="project",
+        cascade="all, delete-orphan",
+    )
 
 
 class ProjectSource(Base):

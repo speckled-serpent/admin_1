@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { ApiError, api } from "../api";
 import { useAuth } from "../auth";
 import { RevenueView } from "../components/RevenueView";
@@ -7,17 +7,22 @@ import { useShell } from "../shell";
 import type { Revenue } from "../types";
 
 const SALES_DATA = "sales-data";
+const DELETE_PHRASE = "DELETE";
 
 export function ProjectPage() {
   const { slug } = useParams();
+  const navigate = useNavigate();
   const { token } = useAuth();
-  const { projects } = useShell();
+  const { projects, setProjects } = useShell();
   const project = projects.find((item) => item.slug === slug);
   const [picked, setPicked] = useState<string | null>(null);
   const selected = project && picked && project.panels.includes(picked) ? picked : (project?.panels[0] ?? "");
   const [revenue, setRevenue] = useState<Revenue | null>(null);
   const [revenueState, setRevenueState] = useState<"idle" | "loading" | "ready" | "missing" | "error">("idle");
   const [revenueError, setRevenueError] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!token || !project || selected !== SALES_DATA) {
@@ -61,6 +66,22 @@ export function ProjectPage() {
     );
   }
 
+  async function confirmDelete() {
+    if (!token || !project || deleting) {
+      return;
+    }
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await api<void>(`/api/projects/${project.slug}`, { method: "DELETE" }, token);
+      setProjects(projects.filter((item) => item.slug !== project.slug));
+      navigate("/");
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : "Could not delete project");
+      setDeleting(false);
+    }
+  }
+
   const showRevenue = selected === SALES_DATA && revenueState === "ready" && revenue !== null;
   const waitingOnRevenue = selected === SALES_DATA && (revenueState === "idle" || revenueState === "loading");
   const showSoon = selected !== "" && !showRevenue && !waitingOnRevenue && revenueState !== "error";
@@ -81,6 +102,16 @@ export function ProjectPage() {
             </button>
           ))}
         </nav>
+        <button
+          type="button"
+          className="rail-delete"
+          onClick={() => {
+            setDeleteError(null);
+            setConfirming(true);
+          }}
+        >
+          Delete project
+        </button>
       </aside>
       <main className="workspace-main">
         <h1>{project.name}</h1>
@@ -98,6 +129,86 @@ export function ProjectPage() {
           </section>
         ) : null}
       </main>
+      {confirming ? (
+        <DeleteProjectDialog
+          projectName={project.name}
+          busy={deleting}
+          error={deleteError}
+          onCancel={() => {
+            if (!deleting) {
+              setConfirming(false);
+              setDeleteError(null);
+            }
+          }}
+          onConfirm={() => void confirmDelete()}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function DeleteProjectDialog({
+  projectName,
+  busy,
+  error,
+  onCancel,
+  onConfirm,
+}: {
+  projectName: string;
+  busy: boolean;
+  error: string | null;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  const [phrase, setPhrase] = useState("");
+  const ready = phrase === DELETE_PHRASE && !busy;
+
+  return (
+    <div className="modal-backdrop">
+      <form
+        className="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="delete-project-title"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (ready) {
+            onConfirm();
+          }
+        }}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") {
+            event.preventDefault();
+            onCancel();
+          }
+        }}
+      >
+        <h2 id="delete-project-title">Delete {projectName}?</h2>
+        <p className="lede">This removes the project and its panels. Type DELETE to confirm.</p>
+        <label>
+          Confirmation
+          <input
+            value={phrase}
+            autoComplete="off"
+            spellCheck={false}
+            onChange={(event) => setPhrase(event.target.value)}
+            autoFocus
+          />
+        </label>
+        {error ? (
+          <p className="form-error" role="alert">
+            {error}
+          </p>
+        ) : null}
+        <div className="modal-actions">
+          <button type="button" className="ghost" onClick={onCancel} disabled={busy}>
+            Cancel
+          </button>
+          <button type="submit" disabled={!ready}>
+            Delete
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

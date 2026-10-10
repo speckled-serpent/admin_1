@@ -444,14 +444,19 @@ th {
 }
 
 .rail {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
   padding: 1.25rem 0.9rem 5rem;
   border-right: 1px solid var(--line);
 }
 
 .rail nav {
   display: grid;
+  align-content: start;
   gap: 0.25rem;
   margin-top: 0.75rem;
+  flex: 1 1 auto;
 }
 
 .rail button {
@@ -469,6 +474,46 @@ th {
 .rail button[aria-current="page"] {
   background: var(--green-soft);
   color: var(--green);
+}
+
+.rail .rail-delete {
+  margin-top: auto;
+  text-align: center;
+  color: var(--coral);
+  border: 1px solid var(--coral);
+  background: transparent;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: rgba(28, 36, 48, 0.45);
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+}
+
+.modal {
+  width: min(28rem, 100%);
+  background: var(--card);
+  border-radius: 16px;
+  padding: 1.25rem 1.35rem 1.35rem;
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 0.75rem;
+}
+
+.modal h2 {
+  font-size: 1.6rem;
+  font-weight: 560;
+  letter-spacing: -0.03em;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
 }
 
 .workspace-main {

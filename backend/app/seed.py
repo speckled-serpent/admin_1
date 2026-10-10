@@ -1,7 +1,7 @@
-"""Idempotent local seed: one dev user and one project with a revenue fixture.
+"""Idempotent local seed: one dev user and no projects.
 
-Cost and health fixtures exist on disk for their adapters, but they are not
-bound here. See docs/roadmap.md.
+Revenue, cost, and health fixtures stay on disk for adapters and tests.
+A fresh database has nothing to show until someone creates a project.
 """
 
 from __future__ import annotations
@@ -14,15 +14,8 @@ from sqlalchemy.orm import Session
 
 from app.config import Settings, get_settings
 from app.database import get_session_factory
-from app.models import Project, ProjectPanel, ProjectSource, User
-from app.panels import SALES_DATA
+from app.models import User
 from app.security import hash_password
-from app.services.revenue import KIND_REVENUE
-
-ACME_SLUG = "acme-notes"
-ACME_NAME = "Acme Notes"
-ACME_REVENUE_FIXTURE = "fixtures/acme_notes_charges.json"
-ACME_REVENUE_ADAPTER = "fixture.revenue"
 
 
 def seed(db: Session, settings: Settings) -> list[str]:
@@ -33,46 +26,6 @@ def seed(db: Session, settings: Settings) -> list[str]:
         notes.append(f"seeded user {settings.dev_username!r}")
     else:
         notes.append(f"user {settings.dev_username!r} already present")
-
-    project = db.scalar(select(Project).where(Project.slug == ACME_SLUG))
-    if project is None:
-        project = Project(slug=ACME_SLUG, name=ACME_NAME)
-        db.add(project)
-        db.flush()
-        notes.append(f"seeded project {ACME_SLUG!r}")
-    else:
-        notes.append(f"project {ACME_SLUG!r} already present")
-
-    source = db.scalar(
-        select(ProjectSource).where(
-            ProjectSource.project_id == project.id,
-            ProjectSource.kind == KIND_REVENUE,
-        )
-    )
-    if source is None:
-        db.add(
-            ProjectSource(
-                project_id=project.id,
-                kind=KIND_REVENUE,
-                adapter_key=ACME_REVENUE_ADAPTER,
-                fixture_path=ACME_REVENUE_FIXTURE,
-            )
-        )
-        notes.append(f"bound {ACME_REVENUE_ADAPTER} to {ACME_SLUG!r}")
-    else:
-        notes.append(f"revenue source for {ACME_SLUG!r} already present")
-
-    panel = db.scalar(
-        select(ProjectPanel).where(
-            ProjectPanel.project_id == project.id,
-            ProjectPanel.panel_key == SALES_DATA,
-        )
-    )
-    if panel is None:
-        db.add(ProjectPanel(project_id=project.id, panel_key=SALES_DATA))
-        notes.append(f"enabled {SALES_DATA} on {ACME_SLUG!r}")
-    else:
-        notes.append(f"{SALES_DATA} already enabled on {ACME_SLUG!r}")
 
     db.commit()
     return notes

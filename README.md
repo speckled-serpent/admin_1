@@ -1,6 +1,6 @@
 # admin_1
 
-Local-first admin panel for a user's software projects. This repository is the skeleton: local login, a SQLite project registry, fixture-backed source adapters, and one wired view — revenue for the fictional project **Acme Notes**.
+Local-first admin panel for a user's software projects. This repository is the skeleton: local login, a SQLite project registry, fixture-backed source adapters, and one wired view — revenue, when a project has a local revenue source. A fresh login has no projects.
 
 Runtime and tests do not call the network. There is no external API, CDN, font host, or telemetry.
 
@@ -66,7 +66,9 @@ Open the app and sign in as the seeded user:
 
 After sign-in the top bar leads with Overview, then one tab per project. With no projects, the page says "No projects started yet. Create one". Creating a project asks for a name and which panels to turn on.
 
-The seed still adds Acme Notes. Open that tab and choose Sales data to see revenue from `backend/fixtures/acme_notes_charges.json` (gross, refunds, net, and the charge list). Other panels stay on a Coming soon page.
+On a project page, **Delete project** sits at the bottom of the left rail. Confirming it requires typing `DELETE`. That removes the project and its panels and returns to Overview.
+
+Sales data shows fixture revenue only when that project has a revenue source. The default seed does not create one. Other panels stay on a Coming soon page. If an older database still has a project from a previous seed, delete `backend/data/admin.db` and run `make seed` again.
 
 ## Test
 
@@ -81,10 +83,8 @@ That runs `pytest` for the backend and `vitest` plus `tsc --noEmit` for the fron
 | Piece | Value |
 | --- | --- |
 | User | `dev` / `devpass` (password stored as a PBKDF2 hash) |
-| Project | Acme Notes (`acme-notes`) |
-| Revenue source | `fixture.revenue` → `fixtures/acme_notes_charges.json` |
 
-Cost and health fixtures are on disk for their adapters and are not attached to the project. Running `make seed` again does not duplicate the user, the project, or the binding. It also does not reset the password if the user already exists.
+The seed does not create a project or a source binding. Charge, cost, and health fixtures stay on disk for adapters and tests. Running `make seed` again does not duplicate the user and does not reset the password if the user already exists.
 
 ## API (authenticated, except health and login)
 
@@ -97,7 +97,8 @@ Cost and health fixtures are on disk for their adapters and are not attached to 
 | `GET` | `/api/panel-catalog` | Panel checklist |
 | `GET` | `/api/projects` | Projects and their panels |
 | `POST` | `/api/projects` | Create a project and its panels |
-| `GET` | `/api/projects/{slug}/revenue` | One project's revenue |
+| `DELETE` | `/api/projects/{slug}` | Remove a project, its panels, and its sources |
+| `GET` | `/api/projects/{slug}/revenue` | One project's revenue, when a source is bound |
 
 Money in JSON is integer minor units. `usd` `15900` is 159.00 dollars.
 

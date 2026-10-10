@@ -133,5 +133,6 @@ describe("projects", () => {
     expect(screen.getByRole("heading", { name: "Coming soon" })).toBeInTheDocument();
     expect(screen.getByText("Logs is not wired to a data source yet.")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Create New Project" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Delete project" })).toBeInTheDocument();
   });
 });

@@ -83,7 +83,9 @@ The skeleton and this document are both evolving. Update this section when a tas
 - Overview tab, one tab per project, the empty-state copy, and the floating create button
 - Create-project flow: a name plus the panel checklist, stored on the project
 - Project page with a rail of the selected panels. Panels show Coming soon
-- A project row and a revenue source binding for one fictional project. Its Sales data panel shows that fixture revenue
+- Delete project from the bottom of that rail, after typing DELETE. The project and its panels are removed, then Overview
+- Default seed is the dev user only, so a fresh login shows the empty state
+- Sales data shows fixture revenue when a project has a revenue source. Nothing is bound by default
 - Adapter interfaces for revenue, costs, and server health, each with a local fake
 - Offline boot and tests (`make test`)
 
