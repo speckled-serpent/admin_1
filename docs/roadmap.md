@@ -2,7 +2,7 @@
 
 What is still missing, and the constraints later tasks must keep. The goal they serve is [project.md](project.md). A section that says a slice is already in place is the exception. Do not treat this file as permission to widen a task past what it asks for.
 
-The skeleton already has local login, a project registry, three local adapter interfaces (revenue, costs, health), and one wired revenue view. See the status section in [project.md](project.md).
+The skeleton already has local login, a project registry, and three local adapter interfaces (revenue, costs, health). Push ingest, the HTTP health pull, project-level connections, panel settings, and the Select data sources step are in place. Sales data still shows fixture revenue when that panel is Fake and a revenue source is bound. See the status section in [project.md](project.md) and [connectors.md](connectors.md).
 
 ## Navigation, empty state, and creating a project
 
@@ -31,13 +31,13 @@ Leave these for a later task:
 
 ## A second source adapter
 
-There is one concrete reader per kind (`fixture.revenue`, `fixture.costs`, `fixture.health`). A later task should add another adapter: its own key, its own fixtures, and behavior for bad or partial records (missing fields, unknown status, truncated files). That includes tests. Do not weaken the current adapters into silent skip-bad-rows behavior as a shortcut.
+There is one concrete fixture reader per kind (`fixture.revenue`, `fixture.costs`, `fixture.health`). A later task should add another adapter: its own key, its own fixtures, and behavior for bad or partial records (missing fields, unknown status, truncated files). That includes tests. Do not weaken the current adapters into silent skip-bad-rows behavior as a shortcut.
 
-Cost and health fakes already read `acme_notes_costs.json` and `acme_notes_health.json`. They are not bound in the seed, and they have no service, route, or page. Wiring those two fakes through the API is separate from adding a second adapter implementation.
+`fixture.revenue` is what Sales data reads when that panel is Fake and a revenue source is bound. `fixture.costs` and `fixture.health` already read `acme_notes_costs.json` and `acme_notes_health.json`. They are not bound in the seed and have no page. Push ingest and the HTTP health connection are a different path: they write SQLite and do not replace these fixture readers. See [connectors.md](connectors.md). Wiring the cost and health fakes through the API is separate from adding a second adapter implementation.
 
 ## Overview
 
-The current dashboard asks for one project's revenue. It does not total across projects, filter by a date range, or convert currency. `MixedCurrencyError` is the current response when one project's succeeded charges disagree on currency.
+Overview is still a placeholder. It does not total across projects, filter by a date range, or convert currency. On a project, Sales data shows fixture revenue when a source is bound and that panel is Fake, and System health can show the latest status from a push snapshot or an HTTP health check. `MixedCurrencyError` is the response when one project's succeeded charges disagree on currency.
 
 Overview, as specified in [project.md](project.md), adds cross-project totals (revenue, costs, uptime, and the other chosen categories), a date range, a currency, and an activity feed. Likely shape for money: a service that takes an explicit set of project slugs and a date range, still using integer minor units, and a documented conversion step if more than one currency is allowed. Invented project names only (Lumen and Orbit are reserved examples). Do not pull in a live rates service.
 

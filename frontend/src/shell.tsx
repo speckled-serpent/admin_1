@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { ApiError, api } from "./api";
 import { useAuth } from "./auth";
@@ -25,6 +25,10 @@ export function Shell() {
   const navigate = useNavigate();
   const [value, setValue] = useState<ShellValue | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const logoutRef = useRef(logout);
+  const navigateRef = useRef(navigate);
+  logoutRef.current = logout;
+  navigateRef.current = navigate;
 
   useEffect(() => {
     if (!token) {
@@ -51,8 +55,8 @@ export function Shell() {
           return;
         }
         if (err instanceof ApiError && err.status === 401) {
-          await logout();
-          navigate("/login", { replace: true });
+          await logoutRef.current();
+          navigateRef.current("/login", { replace: true });
           return;
         }
         setError(err instanceof Error ? err.message : "Could not load projects");
@@ -63,7 +67,7 @@ export function Shell() {
     return () => {
       cancelled = true;
     };
-  }, [token, logout, navigate]);
+  }, [token]);
 
   async function onLogout() {
     await logout();
