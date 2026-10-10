@@ -1,8 +1,19 @@
 # admin_1
 
-Local-first admin panel for a user's software projects. This repository is the skeleton: local login, a SQLite project registry, fixture-backed source adapters, and one wired view — revenue, when a project has a local revenue source. A fresh login has no projects.
+A local-first admin panel for monitoring several software projects on one machine. You sign in, create a project, choose the panels it needs, and attach a data source to each one. A fresh login has no projects.
 
-Runtime and tests do not call the network. There is no external API, CDN, font host, or telemetry.
+What is in place:
+
+- Local username and password sessions, stored in SQLite and migrated with Alembic
+- Projects with a selectable panel list, then an onboarding step that picks a data source for each panel
+- Project-level connections. A connection is a named Push source with an API key, or an HTTP health URL. More than one panel can use the same connection
+- Push ingest. The key is shown once and only its hash is stored. Sections in the payload (`health`, `users`, `revenue`, `costs`) update the matching panel type on that connection
+- An HTTP health pull: one GET through an injectable client, so checks can be tested without opening a socket
+- Panel settings on their own page, opened from a cog on the project rail, including a connection test and the last received time
+- Delete project and delete panel. Each one asks you to type DELETE
+- `make test` and `make lint` (pytest, vitest, Ruff, and ESLint). Both run offline after dependencies are installed
+
+The pages read SQLite. They do not call out to a network while you are looking at them. There is no external API, CDN, font host, or telemetry. Fake data sources still read local fixture files. Sales data shows fixture revenue only when that panel is on Fake and a revenue source is bound. System health can show the latest status from a push snapshot or a health check. Panels with no data yet stay on Coming soon.
 
 ## Layout
 
@@ -66,11 +77,11 @@ Open the app and sign in as the seeded user:
 - username: `dev`
 - password: `devpass`
 
-After sign-in the top bar leads with Overview, then one tab per project. With no projects, the page says "No projects started yet. Create one". Creating a project asks for a name and which panels to turn on.
+After sign-in the top bar leads with Overview, then one tab per project. With no projects, the page says "No projects started yet. Create one". Creating a project asks for a name, which panels to turn on, and a data source for each of those panels: Fake, a new connection, or a connection added earlier in that same step.
 
-On a project page, **Delete project** sits at the bottom of the left rail. Confirming it requires typing `DELETE`. That removes the project and its panels and returns to Overview.
+On a project page the left rail lists the panels. A cog opens that panel's settings. **Delete panel** and **Delete project** sit at the bottom of the rail. Each requires typing `DELETE`. Delete panel removes that panel and opens the next one, or Overview when none remain. Delete project removes the project and returns to Overview. Shared connections stay when only a panel is deleted.
 
-Sales data shows fixture revenue only when that project has a revenue source. The default seed does not create one. Other panels stay on a Coming soon page. If an older database still has a project from a previous seed, delete `backend/data/admin.db` and run `make seed` again.
+Sales data shows fixture revenue only when that panel is Fake and the project has a revenue source. The default seed does not create one. System health can show the latest status when a snapshot or health check has one. Other panels stay on Coming soon until they have data. If an older database still has a project from a previous seed, delete `backend/data/admin.db` and run `make seed` again.
 
 ## Test
 
@@ -79,6 +90,12 @@ make test
 ```
 
 That runs `pytest` for the backend and `vitest` plus `tsc --noEmit` for the frontend. Backend tests refuse outbound sockets. Frontend tests stub `fetch`.
+
+```bash
+make lint
+```
+
+`make lint` runs Ruff on the backend and ESLint on the frontend. It does not need a network once dependencies are installed.
 
 ## Seeded data
 
