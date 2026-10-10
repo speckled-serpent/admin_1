@@ -1,8 +1,6 @@
 # admin_1
 
-Local-first admin panel for a user's software projects. This repository is the skeleton: local login, a SQLite project registry, fixture-backed source adapters, and one wired view — revenue, when a project has a local revenue source. A fresh login has no projects.
-
-Runtime and tests do not call the network. There is no external API, CDN, font host, or telemetry.
+admin_1 is an admin panel that consolidates multiple projects into one service. The goal of this project is to build a working admin panel that brings multiple projects together so you can review them quickly, all at once. Many panels are still under development.
 
 ## Layout
 
@@ -66,11 +64,11 @@ Open the app and sign in as the seeded user:
 - username: `dev`
 - password: `devpass`
 
-After sign-in the top bar leads with Overview, then one tab per project. With no projects, the page says "No projects started yet. Create one". Creating a project asks for a name and which panels to turn on.
+After sign-in the top bar leads with Overview, then one tab per project. With no projects, the page says "No projects started yet. Create one". Creating a project asks for a name, which panels to turn on, and a data source for each of those panels: Fake, a new connection, or a connection added earlier in that same step.
 
-On a project page, **Delete project** sits at the bottom of the left rail. Confirming it requires typing `DELETE`. That removes the project and its panels and returns to Overview.
+On a project page the left rail lists the panels. A cog opens that panel's settings. **Delete panel** and **Delete project** sit at the bottom of the rail. Each requires typing `DELETE`. Delete panel removes that panel and opens the next one, or Overview when none remain. Delete project removes the project and returns to Overview. Shared connections stay when only a panel is deleted.
 
-Sales data shows fixture revenue only when that project has a revenue source. The default seed does not create one. Other panels stay on a Coming soon page. If an older database still has a project from a previous seed, delete `backend/data/admin.db` and run `make seed` again.
+Sales data shows fixture revenue only when that panel is Fake and the project has a revenue source. The default seed does not create one. System health can show the latest status when a snapshot or health check has one. Other panels stay on Coming soon until they have data. If an older database still has a project from a previous seed, delete `backend/data/admin.db` and run `make seed` again.
 
 ## Test
 
@@ -79,6 +77,12 @@ make test
 ```
 
 That runs `pytest` for the backend and `vitest` plus `tsc --noEmit` for the frontend. Backend tests refuse outbound sockets. Frontend tests stub `fetch`.
+
+```bash
+make lint
+```
+
+`make lint` runs Ruff on the backend and ESLint on the frontend. It does not need a network once dependencies are installed.
 
 ## Seeded data
 
