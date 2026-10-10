@@ -104,7 +104,8 @@ label {
   font-size: 0.92rem;
 }
 
-input {
+input,
+select {
   border: 1px solid var(--line);
   background: #fff;
   border-radius: 10px;
@@ -112,7 +113,8 @@ input {
   color: var(--ink);
 }
 
-input:focus {
+input:focus,
+select:focus {
   outline: 2px solid var(--green);
   outline-offset: 1px;
 }
@@ -538,6 +540,35 @@ th {
 .coming-soon h2 {
   font-size: 1.6rem;
   font-weight: 560;
+}
+
+.data-source {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding: 1rem 1.1rem;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+
+.data-source h2 {
+  font-size: 1.15rem;
+  font-weight: 560;
+}
+
+.data-source form {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.key-once {
+  margin: 0;
+  padding: 0.7rem 0.75rem;
+  border-radius: 10px;
+  background: var(--green-soft);
+  font-family: ui-monospace, monospace;
+  word-break: break-all;
 }
 
 .page h1 {

@@ -70,3 +70,5 @@ Do this when a future task asks for another adapter. The skeleton stops after th
 8. Add tests that point at the fixture file or a temp database. Tests must pass with outbound network disabled (see [testing.md](testing.md)).
 
 A second revenue adapter, partial-data handling, and the tests for those cases are intentionally not in this tree. See [roadmap.md](roadmap.md).
+
+Pull connectors that call the network are a separate path. See [connectors.md](connectors.md).

@@ -72,6 +72,9 @@ describe("sales data panel", () => {
         if (url === "/api/projects/harbor/revenue") {
           return json(revenue);
         }
+        if (url.endsWith("/data-sources")) {
+          return json({ api_key: null, panels: [] });
+        }
         throw new Error(`unexpected fetch ${url}`);
       }),
     );

@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.errors import InvalidProject, ProjectNotFound
-from app.models import Project, ProjectPanel
+from app.models import PanelDataSource, Project, ProjectPanel
 from app.panels import PANELS_BY_KEY, ordered_panel_keys
 
 _SLUG_RE = re.compile(r"[^a-z0-9]+")
@@ -51,6 +51,7 @@ def create_project(db: Session, name: str, panel_keys: list[str]) -> Project:
     db.flush()
     for key in selected:
         db.add(ProjectPanel(project_id=project.id, panel_key=key))
+        db.add(PanelDataSource(project_id=project.id, panel_key=key, mode="fake"))
     project_id = project.id
     db.commit()
     stored = db.scalar(select(Project).options(selectinload(Project.panels)).where(Project.id == project_id))

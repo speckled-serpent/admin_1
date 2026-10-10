@@ -16,7 +16,7 @@ frontend/         React, Vite, TypeScript, vitest
 docs/             project goal, architecture, adapters, testing, roadmap
 ```
 
-The living goal and scope is [docs/project.md](docs/project.md). Conventions live in [docs/architecture.md](docs/architecture.md), [docs/adapters.md](docs/adapters.md), and [docs/testing.md](docs/testing.md). Work still to do, and the constraints on it, are listed in [docs/roadmap.md](docs/roadmap.md).
+The living goal and scope is [docs/project.md](docs/project.md). Conventions live in [docs/architecture.md](docs/architecture.md), [docs/adapters.md](docs/adapters.md), and [docs/testing.md](docs/testing.md). Data connections are described in [docs/connectors.md](docs/connectors.md). Work still to do, and the constraints on it, are listed in [docs/roadmap.md](docs/roadmap.md).
 
 ## Prerequisites
 
@@ -97,8 +97,15 @@ The seed does not create a project or a source binding. Charge, cost, and health
 | `GET` | `/api/panel-catalog` | Panel checklist |
 | `GET` | `/api/projects` | Projects and their panels |
 | `POST` | `/api/projects` | Create a project and its panels |
-| `DELETE` | `/api/projects/{slug}` | Remove a project, its panels, and its sources |
+| `DELETE` | `/api/projects/{slug}` | Remove a project, its panels, sources, keys, and snapshots |
 | `GET` | `/api/projects/{slug}/revenue` | One project's revenue, when a source is bound |
+| `GET` | `/api/projects/{slug}/data-sources` | Panel data sources and the active key prefix |
+| `PUT` | `/api/projects/{slug}/panels/{panel}/data-source` | Set Fake, Push, or HTTP health |
+| `POST` | `/api/projects/{slug}/api-key` | Generate a project API key (shown once) |
+| `POST` | `/api/projects/{slug}/api-key/rotate` | Revoke the active key and issue a new one |
+| `DELETE` | `/api/projects/{slug}/api-key` | Revoke the active key |
+| `POST` | `/api/projects/{slug}/panels/{panel}/test-connection` | Check the saved source |
+| `POST` | `/api/ingest/{slug}` | Push a version-1 payload (project API key, not the user session) |
 
 Money in JSON is integer minor units. `usd` `15900` is 159.00 dollars.
 

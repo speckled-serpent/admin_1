@@ -1,7 +1,7 @@
 """Panel checklist shown when creating a project.
 
-Keys are stable ids stored on ``project_panels``. Selecting a panel does not
-attach a data source. That setting is still to be built.
+Keys are stable ids stored on ``project_panels``. The data source for a panel
+lives on ``panel_data_sources`` and defaults to local fixtures.
 """
 
 from __future__ import annotations
