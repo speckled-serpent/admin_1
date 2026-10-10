@@ -8,17 +8,17 @@ The dashboard reads SQLite. It does not call the network while rendering. Push a
 
 | Mode | Who moves the data | Stored as |
 | --- | --- | --- |
-| Fake | Nobody. Adapters read files under `backend/fixtures/`. | Existing `project_sources` rows |
-| Push | The project sends a payload to admin_1. | `ingest_snapshots` |
-| Pull | admin_1 sends a read-only request on a schedule. | `panel_data_sources` plus the snapshot the connector records |
+| Fake | Nobody. Adapters read files under `backend/fixtures/`. | Existing `project_sources` rows. The panel has no connection |
+| Push | A named connection's server sends a payload to admin_1. | `ingest_snapshots`, one row per connection and section |
+| Pull | admin_1 sends a read-only request on a schedule. | The connection row, plus `last_status` on the panels that reference it |
 
-A panel defaults to Fake. System health may also use HTTP health. Other panels in this slice are Fake or Push only.
+A connection belongs to one project and has a name and a kind (`push` or `http-health`). Panels point at a connection with `panel_data_sources.connection_id`. Credentials live on the connection, not the panel. A panel defaults to Fake. System health may use an HTTP health connection. Other panels in this slice are Fake or Push only.
 
 Nothing in these modes restarts, deploys, or otherwise changes a remote server.
 
 ## Push schema, version 1
 
-`POST /api/ingest/{slug}` with `Authorization: Bearer <project API key>`.
+`POST /api/ingest/{slug}` with `Authorization: Bearer <connection API key>`.
 
 ```json
 {
@@ -45,25 +45,25 @@ Rules, enforced by `backend/app/ingest_schema.py`:
 - Timestamps are ISO-8601. Currency is a 3-letter code, stored lowercase.
 - Unknown fields are rejected. A bad payload writes nothing.
 
-Panel kinds: System health reads `health`, User data reads `users`, Sales data reads `revenue`, Consolidated costs reads `costs`. Other panels can be set to Push, but this schema has no section for them yet, so they stay on Coming soon.
+Panel kinds: System health reads `health`, User data reads `users`, Sales data reads `revenue`, Consolidated costs reads `costs`. A section updates only the panels of that kind whose `connection_id` is the connection that authenticated the request. Other panels can be set to Push, but this schema has no section for them yet, so they stay on Coming soon.
 
-## Project API keys
+## Connection API keys
 
-`project_api_keys.key_hash` is the SHA-256 of the key. The plaintext is returned once from generate or rotate and is not stored. A revoked key cannot ingest. A key for one project is rejected on another project's ingest URL. A user session token is not an ingest key.
+`connection_api_keys.key_hash` is the SHA-256 of the key for one push connection. The plaintext is returned once from generate or rotate and is not stored. A revoked key cannot ingest. A key is rejected on another project's ingest URL. A user session token is not an ingest key.
 
-Generate fails when an active key already exists. Rotate revokes it and returns a new key. Revoke leaves the project with no active key.
+Generate fails when that connection already has an active key. Rotate revokes it and returns a new key. Revoke leaves the connection with no active key. HTTP health connections do not have API keys; they store an encrypted secret.
 
 ## HTTP health
 
 The only pull connector in this slice. It implements `HealthAdapter.list_pings()` in `backend/app/connectors/http_health.py`.
 
-Settings on the panel: URL (`http` or `https`, no userinfo), expected status (100–599), timeout (1–30 seconds), and an optional secret. The secret is encrypted with Fernet before it is stored. Set `CONNECTOR_MASTER_KEY` or let the first save create `backend/data/connector.key` (gitignored). The API returns `has_secret`, never the secret.
+Settings on the connection: URL (`http` or `https`, no userinfo), expected status (100–599), timeout (1–30 seconds), and an optional secret. The secret is encrypted with Fernet before it is stored. Set `CONNECTOR_MASTER_KEY` or let the first save create `backend/data/connector.key` (gitignored). The API returns `has_secret`, never the secret. The panel settings page assigns System health to that connection.
 
 The check is one GET. If a secret is set, the request adds `Authorization: Bearer <secret>`. Status `up` means the response status equals the expected status. Anything else, including a transport failure, is `down`.
 
 `HttpClient` is a protocol in `backend/app/connectors/http.py`. The route depends on `get_http_client()`. Tests override that dependency with a fake. The urllib implementation lives in `urllib_client.py` and is not used by tests.
 
-`poll_due_http_health` checks rows whose last receipt is older than 300 seconds. No thread in this process calls it. Test connection checks immediately. Scheduler hardening is later.
+`poll_due_http_health` checks connections whose last receipt is older than 300 seconds. No thread in this process calls it. Test connection checks immediately and writes the status onto every panel that references the connection. Scheduler hardening is later.
 
 ## How to add a connector
 
@@ -75,6 +75,6 @@ The check is one GET. If a secret is set, the request adds `Authorization: Beare
 6. Allow the new mode only on the panels it applies to (`allowed_modes` in `app/services/connections.py`).
 7. Add an Alembic migration if the settings need columns or a table. Keep `tests/test_migrations.py` in agreement with the models.
 8. Test with a fake transport. The suite blocks non-localhost sockets. Do not weaken that guard.
-9. Add the mode to the Data source control. Keep the panel body on Coming soon unless the new status is as small as the system-health line.
+9. Add the mode to the panel settings page. Keep the panel body on Coming soon unless the new status is as small as the system-health line.
 
 Card-processor connectors, cloud-cost connectors, a reporter SDK, scheduler hardening, rollups, and alerts are out of scope here. See [roadmap.md](roadmap.md).

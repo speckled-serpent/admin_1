@@ -34,9 +34,27 @@ class ProjectDetail(BaseModel):
     panels: list[str]
 
 
+class ConnectionDraftIn(BaseModel):
+    key: str = Field(min_length=1, max_length=64)
+    name: str = Field(min_length=1, max_length=120)
+    kind: str
+    url: str | None = None
+    expected_status: int | None = None
+    timeout_seconds: int | None = None
+    secret: str | None = None
+
+
+class SourceDraftIn(BaseModel):
+    panel: str
+    mode: str
+    connection: str | None = None
+
+
 class ProjectCreate(BaseModel):
     name: str = Field(min_length=1, max_length=120)
     panels: list[str] = Field(min_length=1)
+    connections: list[ConnectionDraftIn] | None = None
+    sources: list[SourceDraftIn] | None = None
 
 
 class PanelOut(BaseModel):
@@ -58,34 +76,47 @@ class ChargeOut(BaseModel):
     customer: str | None = None
 
 
-class PanelSourceOut(BaseModel):
-    panel_key: str
-    mode: str
-    allowed_modes: list[str]
-    url: str | None
-    expected_status: int | None
-    timeout_seconds: int | None
-    has_secret: bool
-    last_received_at: datetime | None
-    last_status: str | None
-
-
 class ApiKeyOut(BaseModel):
     prefix: str
     created_at: datetime
 
 
-class DataSourcesOut(BaseModel):
-    api_key: ApiKeyOut | None
-    panels: list[PanelSourceOut]
-
-
-class DataSourceUpdate(BaseModel):
-    mode: str
+class ConnectionIn(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    kind: str
     url: str | None = None
     expected_status: int | None = None
     timeout_seconds: int | None = None
     secret: str | None = None
+
+
+class ConnectionOut(BaseModel):
+    id: int
+    name: str
+    kind: str
+    url: str | None
+    expected_status: int | None
+    timeout_seconds: int | None
+    has_secret: bool
+    api_key: ApiKeyOut | None
+    last_received_at: datetime | None
+    last_status: str | None
+
+
+class PanelSettingsOut(BaseModel):
+    panel_key: str
+    mode: str
+    connection_id: int | None
+    allowed_modes: list[str]
+    last_received_at: datetime | None
+    last_status: str | None
+    connections: list[ConnectionOut]
+
+
+class PanelSettingsUpdate(BaseModel):
+    mode: str
+    connection_id: int | None = None
+    new_connection: ConnectionIn | None = None
 
 
 class IssuedApiKeyOut(BaseModel):

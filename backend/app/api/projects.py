@@ -12,6 +12,7 @@ from app.database import get_db
 from app.deps import get_current_user
 from app.errors import (
     FixtureError,
+    InvalidDataSource,
     InvalidProject,
     MixedCurrencyError,
     ProjectNotFound,
@@ -21,7 +22,7 @@ from app.errors import (
 from app.models import Project, User
 from app.panels import PANELS
 from app.schemas import ChargeOut, PanelOut, ProjectCreate, ProjectDetail, ProjectOut, RevenueOut
-from app.services.projects import create_project, delete_project, list_projects, panel_keys_for
+from app.services.projects import create_project, delete_panel, delete_project, list_projects, panel_keys_for
 from app.services.revenue import project_revenue
 
 router = APIRouter(tags=["projects"])
@@ -51,10 +52,29 @@ def create_project_route(
     _user: Annotated[User, Depends(get_current_user)],
 ) -> ProjectDetail:
     try:
-        project = create_project(db, body.name, body.panels)
-    except InvalidProject as exc:
+        project = create_project(
+            db,
+            body.name,
+            body.panels,
+            connections=None if body.connections is None else [item.model_dump() for item in body.connections],
+            sources=None if body.sources is None else [item.model_dump() for item in body.sources],
+        )
+    except (InvalidProject, InvalidDataSource) as exc:
         raise HTTPException(status_code=422, detail=exc.detail) from None
     return _detail(project)
+
+
+@router.delete("/projects/{slug}/panels/{panel_key}", status_code=204)
+def delete_panel_route(
+    slug: str,
+    panel_key: str,
+    db: Annotated[Session, Depends(get_db)],
+    _user: Annotated[User, Depends(get_current_user)],
+) -> None:
+    try:
+        delete_panel(db, slug, panel_key)
+    except ProjectNotFound:
+        raise HTTPException(status_code=404, detail="Panel not found") from None
 
 
 @router.delete("/projects/{slug}", status_code=204)

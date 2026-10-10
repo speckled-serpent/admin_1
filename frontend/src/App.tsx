@@ -4,6 +4,7 @@ import { useAuth } from "./auth";
 import { CreateProjectPage } from "./pages/CreateProject";
 import { LoginPage } from "./pages/Login";
 import { OverviewPage } from "./pages/Overview";
+import { PanelSettingsPage } from "./pages/PanelSettings";
 import { ProjectPage } from "./pages/ProjectPage";
 import { Shell } from "./shell";
 
@@ -28,6 +29,8 @@ export function AppRoutes() {
       >
         <Route path="/" element={<OverviewPage />} />
         <Route path="/create" element={<CreateProjectPage />} />
+        <Route path="/projects/:slug/panels/:panel/settings" element={<PanelSettingsPage />} />
+        <Route path="/projects/:slug/panels/:panel" element={<ProjectPage />} />
         <Route path="/projects/:slug" element={<ProjectPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

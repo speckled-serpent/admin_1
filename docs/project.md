@@ -26,7 +26,7 @@ A persistent floating **+** (**Create New Project**) stays in the bottom-right c
 
 ## Create a project
 
-The flow asks for a name, then a checklist of the data categories that project needs. Each chosen category has its own data-source setting (which adapter feeds it).
+The flow asks for a name, then a checklist of the data categories that project needs. The next step, **Select data sources**, asks where each chosen panel gets its data: Fake, a new connection, or a connection added earlier in the same step. Back returns to the checklist. Confirm stores the project.
 
 **Server**
 
@@ -54,17 +54,21 @@ The flow asks for a name, then a checklist of the data categories that project n
 
 ## Data connections
 
-Each panel on a project has one data source. The panel does not call out while someone is reading the dashboard. Readers use local SQLite only.
+A connection is a named server or service on a project, set up once. Panels reference a connection. They do not store its URL, secret, or API key. Several panels can share one connection. Fake leaves the panel with no connection and reads local fixtures.
+
+The panel page does not configure the source. A cog on each rail row opens `/projects/{slug}/panels/{panel}/settings`. That page chooses Fake, Push, or HTTP health (where that connector applies), creates or reuses a connection, tests it, and shows the last received time.
 
 **Fake.** The panel reads local fixture files through the existing adapters. Nothing leaves the machine.
 
-**Push.** The project sends a read-only payload to admin_1. admin_1 defines the payload; the project does not get a way to change remote servers from this panel. Schema version 1 accepts any non-empty subset of `health`, `users`, `revenue`, and `costs`. A section that is present must be complete. Unknown fields are rejected. `POST /api/ingest/{project}` checks a per-project API key and writes the accepted sections into snapshot tables. The key is shown once at generation. Only its hash is stored. Rotate revokes the previous key and issues a new one. Revoke disables ingest until a new key exists.
+**Push.** One server sends a read-only payload to admin_1. admin_1 defines the payload; the panel does not get a way to change remote servers. Schema version 1 accepts any non-empty subset of `health`, `users`, `revenue`, and `costs`. A section that is present must be complete. Unknown fields are rejected. `POST /api/ingest/{project}` checks the API key of one push connection. Each section is stored on that connection and applied only to panels of the matching type that reference it: `health` to System health, `users` to User data, `revenue` to Sales data, `costs` to Consolidated costs. One server can feed System health and User data while Sales uses a different connection. The key is shown once at generation. Only its hash is stored. Rotate revokes the previous key and issues a new one. Revoke disables ingest until a new key exists.
 
-**Pull.** A connector implements one of the existing adapter interfaces and is polled on a schedule. Connector secrets are encrypted at rest. This slice has one pull connector: HTTP health, on the System health panel. It stores a URL, an expected status, and a timeout, then performs a single GET. The HTTP client is injected. Tests pass a fake transport and do not open a socket. The poll function exists; a long-running scheduler is not started in this process.
+**Pull.** A connector implements one of the existing adapter interfaces and is polled on a schedule. Connector secrets are encrypted at rest. This slice has one pull connector: HTTP health, as a connection that System health can use. It stores a URL, an expected status, and a timeout, then performs a single GET. The HTTP client is injected. Tests pass a fake transport and do not open a socket. The poll function exists; a long-running scheduler is not started in this process.
 
-The project page has a Data source setting per panel: Fake, Push, or HTTP health where that connector applies. It can generate the push key, test the saved source, and show the last received time. Panel bodies stay on Coming soon, except System health, which can show the latest status from a snapshot or a health check.
+Panel bodies stay on Coming soon, except System health, which can show the latest status from a snapshot or a health check. Sales data still shows fixture revenue when that panel is Fake and a revenue source is bound.
 
-How to add another connector is in [connectors.md](connectors.md). Card-processor connectors, cloud-cost connectors, a reporter SDK, scheduler hardening, rollups, and alerts are later. See [roadmap.md](roadmap.md).
+**Delete panel** sits at the bottom-left of every panel page, above Delete project. The operator types DELETE. The panel leaves the project and the rail. The connection stays, so other panels that share it keep working. The app opens the next panel, or Overview when that was the last one.
+
+How to add another connector is in [connectors.md](connectors.md). Stripe and cloud-cost connectors, a reporter SDK, scheduler hardening, rollups, and alerts are later. See [roadmap.md](roadmap.md).
 
 ## Attention
 
@@ -95,13 +99,14 @@ The skeleton and this document are both evolving. Update this section when a tas
 
 - Local username/password sessions and one seeded dev user
 - Overview tab, one tab per project, the empty-state copy, and the floating create button
-- Create-project flow: a name plus the panel checklist, stored on the project
-- Project page with a rail of the selected panels. Panels show Coming soon, except System health when a snapshot or health check has a status
-- Delete project from the bottom of that rail, after typing DELETE. The project and its panels are removed, then Overview
+- Create-project flow: a name, the panel checklist, then Select data sources. Confirm stores the project, its panels, and any connections created in that step
+- Project page with a rail of the selected panels. A cog on each row opens that panel's settings. Panels show Coming soon, except System health when a snapshot or health check has a status
+- Delete panel from the bottom-left of every panel page, after typing DELETE. The panel leaves the rail. The next panel opens, or Overview when none remain. Shared connections stay
+- Delete project from the bottom of that rail, after typing DELETE. The project, its panels, and its connections are removed, then Overview
 - Default seed is the dev user only, so a fresh login shows the empty state
 - Sales data shows fixture revenue when a project has a revenue source and that panel is still on Fake. Nothing is bound by default
 - Adapter interfaces for revenue, costs, and server health, each with a local fake
-- Per-panel data source: Fake, Push, or HTTP health on System health. Push ingest (schema version 1) and hashed project API keys. HTTP health checks go through an injectable client
+- Project connections. A panel is Fake or references a Push or HTTP health connection. One push connection can feed several panel types by payload section. API keys belong to the connection and are stored as hashes. HTTP health checks go through an injectable client
 - Offline boot and tests (`make test`)
 
 **Not yet built**

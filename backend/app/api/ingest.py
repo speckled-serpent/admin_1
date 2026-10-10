@@ -1,4 +1,4 @@
-"""Push ingest. Authenticated with the project API key, never a user session."""
+"""Push ingest. Authenticated with a connection API key, never a user session."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.errors import InvalidCredentials, InvalidPayload
 from app.schemas import IngestOut
-from app.services.connections import accept_ingest, project_for_ingest_key
+from app.services.connections import accept_ingest, connection_for_ingest_key
 
 router = APIRouter(tags=["ingest"])
 _bearer = HTTPBearer(auto_error=False)
@@ -27,11 +27,11 @@ def ingest_route(
     if credentials is None or credentials.scheme.lower() != "bearer":
         raise HTTPException(status_code=401, detail="Invalid API key", headers={"WWW-Authenticate": "Bearer"})
     try:
-        project = project_for_ingest_key(db, slug, credentials.credentials)
+        project, connection = connection_for_ingest_key(db, slug, credentials.credentials)
     except InvalidCredentials:
         raise HTTPException(status_code=401, detail="Invalid API key", headers={"WWW-Authenticate": "Bearer"}) from None
     try:
-        accepted = accept_ingest(db, project, body)
+        accepted = accept_ingest(db, project, connection, body)
     except InvalidPayload as exc:
         raise HTTPException(status_code=422, detail=exc.detail) from None
     return IngestOut(accepted=accepted)

@@ -1,4 +1,4 @@
-"""Operator routes for panel data sources and project API keys."""
+"""Operator routes for project connections and panel settings."""
 
 from __future__ import annotations
 
@@ -14,37 +14,53 @@ from app.errors import InvalidDataSource, ProjectNotFound
 from app.models import User
 from app.schemas import (
     ApiKeyOut,
+    ConnectionIn,
+    ConnectionOut,
     ConnectionTestOut,
-    DataSourceUpdate,
-    DataSourcesOut,
     IssuedApiKeyOut,
-    PanelSourceOut,
+    PanelSettingsOut,
+    PanelSettingsUpdate,
 )
 from app.services.connections import (
-    PanelSourceView,
-    active_api_key,
+    ConnectionView,
+    PanelSettingsView,
+    create_connection,
     issue_api_key,
-    list_panel_sources,
+    list_connections,
+    panel_settings,
     project_or_404,
     revoke_api_key,
-    set_panel_source,
     test_connection,
+    update_panel_settings,
 )
 
 router = APIRouter(tags=["connections"])
 
 
-def _panel_out(row: PanelSourceView) -> PanelSourceOut:
-    return PanelSourceOut(
-        panel_key=row.panel_key,
-        mode=row.mode,
-        allowed_modes=row.allowed_modes,
+def _connection_out(row: ConnectionView) -> ConnectionOut:
+    return ConnectionOut(
+        id=row.id,
+        name=row.name,
+        kind=row.kind,
         url=row.url,
         expected_status=row.expected_status,
         timeout_seconds=row.timeout_seconds,
         has_secret=row.has_secret,
+        api_key=None if row.api_key is None else ApiKeyOut(prefix=row.api_key.prefix, created_at=row.api_key.created_at),
         last_received_at=row.last_received_at,
         last_status=row.last_status,
+    )
+
+
+def _settings_out(row: PanelSettingsView) -> PanelSettingsOut:
+    return PanelSettingsOut(
+        panel_key=row.panel_key,
+        mode=row.mode,
+        connection_id=row.connection_id,
+        allowed_modes=row.allowed_modes,
+        last_received_at=row.last_received_at,
+        last_status=row.last_status,
+        connections=[_connection_out(item) for item in row.connections],
     )
 
 
@@ -55,83 +71,122 @@ def _project(db: Session, slug: str):
         raise HTTPException(status_code=404, detail="Project not found") from None
 
 
-@router.get("/projects/{slug}/data-sources", response_model=DataSourcesOut)
-def data_sources_route(
+@router.get("/projects/{slug}/connections", response_model=list[ConnectionOut])
+def list_connections_route(
     slug: str,
     db: Annotated[Session, Depends(get_db)],
     _user: Annotated[User, Depends(get_current_user)],
-) -> DataSourcesOut:
+) -> list[ConnectionOut]:
     project = _project(db, slug)
-    key = active_api_key(db, project)
-    return DataSourcesOut(
-        api_key=None if key is None else ApiKeyOut(prefix=key.prefix, created_at=key.created_at),
-        panels=[_panel_out(row) for row in list_panel_sources(db, project)],
-    )
+    return [_connection_out(row) for row in list_connections(db, project)]
 
 
-@router.put("/projects/{slug}/panels/{panel_key}/data-source", response_model=PanelSourceOut)
-def update_data_source_route(
+@router.post("/projects/{slug}/connections", response_model=ConnectionOut, status_code=201)
+def create_connection_route(
     slug: str,
-    panel_key: str,
-    body: DataSourceUpdate,
+    body: ConnectionIn,
     db: Annotated[Session, Depends(get_db)],
     _user: Annotated[User, Depends(get_current_user)],
-) -> PanelSourceOut:
+) -> ConnectionOut:
     project = _project(db, slug)
     try:
-        row = set_panel_source(
+        created = create_connection(
             db,
             project,
-            panel_key,
-            body.mode,
+            name=body.name,
+            kind=body.kind,
             url=body.url,
             expected_status=body.expected_status,
             timeout_seconds=body.timeout_seconds,
             secret=body.secret,
-            secret_set="secret" in body.model_fields_set,
         )
     except InvalidDataSource as exc:
         raise HTTPException(status_code=422, detail=exc.detail) from None
-    return _panel_out(row)
+    view = next(row for row in list_connections(db, project) if row.id == created.id)
+    return _connection_out(view)
 
 
-@router.post("/projects/{slug}/api-key", response_model=IssuedApiKeyOut, status_code=201)
+@router.get("/projects/{slug}/panels/{panel_key}/settings", response_model=PanelSettingsOut)
+def panel_settings_route(
+    slug: str,
+    panel_key: str,
+    db: Annotated[Session, Depends(get_db)],
+    _user: Annotated[User, Depends(get_current_user)],
+) -> PanelSettingsOut:
+    project = _project(db, slug)
+    try:
+        row = panel_settings(db, project, panel_key)
+    except InvalidDataSource as exc:
+        raise HTTPException(status_code=422, detail=exc.detail) from None
+    return _settings_out(row)
+
+
+@router.put("/projects/{slug}/panels/{panel_key}/settings", response_model=PanelSettingsOut)
+def update_panel_settings_route(
+    slug: str,
+    panel_key: str,
+    body: PanelSettingsUpdate,
+    db: Annotated[Session, Depends(get_db)],
+    _user: Annotated[User, Depends(get_current_user)],
+) -> PanelSettingsOut:
+    project = _project(db, slug)
+    try:
+        row = update_panel_settings(
+            db,
+            project,
+            panel_key,
+            body.mode,
+            connection_id=body.connection_id,
+            new_connection=None if body.new_connection is None else body.new_connection.model_dump(),
+        )
+    except InvalidDataSource as exc:
+        raise HTTPException(status_code=422, detail=exc.detail) from None
+    return _settings_out(row)
+
+
+@router.post("/projects/{slug}/connections/{connection_id}/api-key", response_model=IssuedApiKeyOut, status_code=201)
 def issue_api_key_route(
     slug: str,
+    connection_id: int,
     db: Annotated[Session, Depends(get_db)],
     _user: Annotated[User, Depends(get_current_user)],
 ) -> IssuedApiKeyOut:
-    project = _project(db, slug)
-    try:
-        issued = issue_api_key(db, project, rotate=False)
-    except InvalidDataSource as exc:
-        raise HTTPException(status_code=422, detail=exc.detail) from None
-    return IssuedApiKeyOut(key=issued.key, prefix=issued.prefix, created_at=issued.created_at)
+    return _issue(db, slug, connection_id, rotate=False)
 
 
-@router.post("/projects/{slug}/api-key/rotate", response_model=IssuedApiKeyOut, status_code=201)
+@router.post(
+    "/projects/{slug}/connections/{connection_id}/api-key/rotate",
+    response_model=IssuedApiKeyOut,
+    status_code=201,
+)
 def rotate_api_key_route(
     slug: str,
+    connection_id: int,
     db: Annotated[Session, Depends(get_db)],
     _user: Annotated[User, Depends(get_current_user)],
 ) -> IssuedApiKeyOut:
+    return _issue(db, slug, connection_id, rotate=True)
+
+
+def _issue(db: Session, slug: str, connection_id: int, *, rotate: bool) -> IssuedApiKeyOut:
     project = _project(db, slug)
     try:
-        issued = issue_api_key(db, project, rotate=True)
+        issued = issue_api_key(db, project, connection_id, rotate=rotate)
     except InvalidDataSource as exc:
         raise HTTPException(status_code=422, detail=exc.detail) from None
     return IssuedApiKeyOut(key=issued.key, prefix=issued.prefix, created_at=issued.created_at)
 
 
-@router.delete("/projects/{slug}/api-key", status_code=204)
+@router.delete("/projects/{slug}/connections/{connection_id}/api-key", status_code=204)
 def revoke_api_key_route(
     slug: str,
+    connection_id: int,
     db: Annotated[Session, Depends(get_db)],
     _user: Annotated[User, Depends(get_current_user)],
 ) -> None:
     project = _project(db, slug)
     try:
-        revoke_api_key(db, project)
+        revoke_api_key(db, project, connection_id)
     except InvalidDataSource as exc:
         raise HTTPException(status_code=422, detail=exc.detail) from None
 

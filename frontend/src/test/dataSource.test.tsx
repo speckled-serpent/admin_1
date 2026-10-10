@@ -5,46 +5,41 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AppRoutes } from "../App";
 import { AuthProvider } from "../auth";
 
-const sources: {
+type Connection = {
+  id: number;
+  name: string;
+  kind: string;
+  url: string | null;
+  expected_status: number | null;
+  timeout_seconds: number | null;
+  has_secret: boolean;
   api_key: { prefix: string; created_at: string } | null;
-  panels: Array<{
-    panel_key: string;
-    mode: string;
-    allowed_modes: string[];
-    url: string | null;
-    expected_status: number | null;
-    timeout_seconds: number | null;
-    has_secret: boolean;
-    last_received_at: string | null;
-    last_status: string | null;
-  }>;
-} = {
-  api_key: null,
-  panels: [
-    {
-      panel_key: "system-health",
-      mode: "fake",
-      allowed_modes: ["fake", "push", "http-health"],
-      url: null,
-      expected_status: null,
-      timeout_seconds: null,
-      has_secret: false,
-      last_received_at: null,
-      last_status: null,
-    },
-    {
-      panel_key: "logs",
-      mode: "fake",
-      allowed_modes: ["fake", "push"],
-      url: null,
-      expected_status: null,
-      timeout_seconds: null,
-      has_secret: false,
-      last_received_at: null,
-      last_status: null,
-    },
-  ],
+  last_received_at: string | null;
+  last_status: string | null;
 };
+
+const state: {
+  connections: Connection[];
+  health: { mode: string; connection_id: number | null; last_received_at: string | null; last_status: string | null };
+  logs: { mode: string; connection_id: number | null; last_received_at: string | null; last_status: string | null };
+} = {
+  connections: [],
+  health: { mode: "fake", connection_id: null, last_received_at: null, last_status: null },
+  logs: { mode: "fake", connection_id: null, last_received_at: null, last_status: null },
+};
+
+function settingsFor(panel: "system-health" | "logs") {
+  const current = panel === "logs" ? state.logs : state.health;
+  return {
+    panel_key: panel,
+    mode: current.mode,
+    connection_id: current.connection_id,
+    allowed_modes: panel === "system-health" ? ["fake", "push", "http-health"] : ["fake", "push"],
+    last_received_at: current.last_received_at,
+    last_status: current.last_status,
+    connections: state.connections,
+  };
+}
 
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -56,10 +51,9 @@ function json(body: unknown, status = 200): Response {
 beforeEach(() => {
   sessionStorage.clear();
   vi.restoreAllMocks();
-  sources.api_key = null;
-  sources.panels[0].mode = "fake";
-  sources.panels[0].last_status = null;
-  sources.panels[0].last_received_at = null;
+  state.connections = [];
+  state.health = { mode: "fake", connection_id: null, last_received_at: null, last_status: null };
+  state.logs = { mode: "fake", connection_id: null, last_received_at: null, last_status: null };
 });
 
 function installFetch() {
@@ -75,24 +69,55 @@ function installFetch() {
         return json({ username: "dev" });
       }
       if (url === "/api/projects") {
-        return json([
-          { slug: "harbor", name: "Harbor", panels: ["system-health", "logs"] },
-        ]);
+        return json([{ slug: "harbor", name: "Harbor", panels: ["system-health", "logs"] }]);
       }
-      if (url === "/api/projects/harbor/data-sources") {
-        return json(sources);
+      if (url === "/api/projects/harbor/panels/system-health/settings" && method === "GET") {
+        return json(settingsFor("system-health"));
       }
-      if (url === "/api/projects/harbor/panels/system-health/data-source" && method === "PUT") {
-        sources.panels[0].mode = body.mode;
-        return json({ ...sources.panels[0], mode: body.mode });
+      if (url === "/api/projects/harbor/panels/logs/settings" && method === "GET") {
+        return json(settingsFor("logs"));
       }
-      if (url === "/api/projects/harbor/api-key" && method === "POST") {
-        sources.api_key = { prefix: "a1_harborKey", created_at: "2026-10-10T12:00:00+00:00" };
-        return json({ key: "a1_harborKeySECRET", prefix: "a1_harborKey", created_at: sources.api_key.created_at }, 201);
+      if (url.endsWith("/settings") && method === "PUT") {
+        const panel = url.includes("/logs/") ? state.logs : state.health;
+        const key = url.includes("/logs/") ? "logs" : "system-health";
+        const update = body as {
+          mode: string;
+          connection_id?: number;
+          new_connection?: { name: string; kind: string; url?: string | null };
+        };
+        if (update.new_connection) {
+          const created: Connection = {
+            id: 7,
+            name: update.new_connection.name,
+            kind: update.new_connection.kind,
+            url: update.new_connection.url ?? null,
+            expected_status: null,
+            timeout_seconds: null,
+            has_secret: false,
+            api_key: null,
+            last_received_at: null,
+            last_status: null,
+          };
+          state.connections = [created];
+          panel.connection_id = created.id;
+        }
+        if (update.connection_id) {
+          panel.connection_id = update.connection_id;
+        }
+        panel.mode = update.mode;
+        if (update.mode === "fake") {
+          panel.connection_id = null;
+        }
+        return json(settingsFor(key as "system-health" | "logs"));
+      }
+      if (url === "/api/projects/harbor/connections/7/api-key" && method === "POST") {
+        const key = { prefix: "a1_harborKey", created_at: "2026-10-10T12:00:00+00:00" };
+        state.connections = state.connections.map((item) => (item.id === 7 ? { ...item, api_key: key } : item));
+        return json({ key: "a1_harborKeySECRET", prefix: key.prefix, created_at: key.created_at }, 201);
       }
       if (url === "/api/projects/harbor/panels/system-health/test-connection" && method === "POST") {
-        sources.panels[0].last_status = "up";
-        sources.panels[0].last_received_at = "2026-10-10T12:05:00+00:00";
+        state.health.last_status = "up";
+        state.health.last_received_at = "2026-10-10T12:05:00+00:00";
         return json({
           ok: true,
           detail: "Push is ready. This panel reads the local snapshot after data arrives.",
@@ -106,8 +131,8 @@ function installFetch() {
   return calls;
 }
 
-describe("data source setting", () => {
-  it("saves push, shows a generated key once, and tests the connection", async () => {
+describe("panel settings", () => {
+  it("keeps data source configuration on the settings route", async () => {
     const user = userEvent.setup();
     sessionStorage.setItem("admin1.token", "test-token");
     const calls = installFetch();
@@ -120,18 +145,25 @@ describe("data source setting", () => {
       </MemoryRouter>,
     );
 
+    expect(await screen.findByRole("heading", { name: "Harbor" })).toBeInTheDocument();
+    expect(screen.queryByLabelText("Data source")).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Coming soon" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("link", { name: "System health settings" }));
+    expect(await screen.findByRole("heading", { name: "System health settings" })).toBeInTheDocument();
     expect(await screen.findByRole("option", { name: "HTTP health" })).toBeInTheDocument();
     const source = screen.getByLabelText("Data source");
     expect(source).toHaveValue("fake");
     expect(screen.queryByText(/a1_harborKeySECRET/)).not.toBeInTheDocument();
 
     await user.selectOptions(source, "push");
+    await user.type(screen.getByLabelText("Connection name"), "Harbor app");
     await user.click(screen.getByRole("button", { name: "Save data source" }));
     expect(calls.some((call) => call.method === "PUT" && call.body && (call.body as { mode: string }).mode === "push")).toBe(
       true,
     );
 
-    await user.click(screen.getByRole("button", { name: "Generate API key" }));
+    await user.click(await screen.findByRole("button", { name: "Generate API key" }));
     expect(await screen.findByText(/Copy this key. It is shown once: a1_harborKeySECRET/)).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Test connection" }));
@@ -154,7 +186,7 @@ describe("data source setting", () => {
       </MemoryRouter>,
     );
 
-    await user.click(await screen.findByRole("button", { name: "Logs" }));
+    await user.click(await screen.findByRole("link", { name: "Logs settings" }));
     const source = await screen.findByLabelText("Data source");
     await waitFor(() => {
       expect(screen.queryByRole("option", { name: "HTTP health" })).not.toBeInTheDocument();

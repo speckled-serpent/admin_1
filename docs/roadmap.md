@@ -11,14 +11,14 @@ The basic shell is in place. See [project.md](project.md).
 - Top bar: **Overview** first, then one tab per project.
 - Empty copy: "No projects started yet. Create one", with a **Create new project** button under it.
 - A persistent floating **+** / **Create New Project** on every authenticated page.
-- Create flow: name the project, then toggle panels. Confirm stores the project and its panel keys. The project tab opens with those panels in a rail. Every panel is Coming soon, except Sales data when that project already has a revenue fixture.
-- Delete project sits at the bottom of the rail. The operator types DELETE, and the project, its panels, and its sources are removed.
+- Create flow: name the project, toggle panels, then Select data sources. Confirm stores the project, its panel keys, and the connections chosen in that step. The project tab opens with those panels in a rail. Every panel is Coming soon, except Sales data when that project already has a revenue fixture.
+- Delete panel and Delete project sit at the bottom of the rail. The operator types DELETE. Deleting a panel leaves shared connections in place. Deleting a project removes its panels and connections.
 
 Still open:
 
 - Editing an existing project's panels.
 
-The first data-source slice is in place. See [project.md](project.md) and [connectors.md](connectors.md). Each panel can be Fake, Push, or, on System health, HTTP health. Push writes local snapshots. HTTP health is one GET through an injectable client.
+Project connections are in place. See [project.md](project.md) and [connectors.md](connectors.md). A panel is Fake or references a shared Push or HTTP health connection. Push sections route to the panel type on that connection. HTTP health is one GET through an injectable client. Panel settings live on their own route, opened from the cog in the rail.
 
 Leave these for a later task:
 
