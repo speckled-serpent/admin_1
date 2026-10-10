@@ -6,7 +6,7 @@ import { AuthProvider } from "../auth";
 import type { Revenue } from "../types";
 
 const revenue: Revenue = {
-  project: { slug: "acme-notes", name: "Acme Notes" },
+  project: { slug: "harbor", name: "Harbor" },
   currency: "usd",
   gross_amount: 15900,
   refunded_amount: 1700,
@@ -16,37 +16,37 @@ const revenue: Revenue = {
   refunded_count: 2,
   charges: [
     {
-      id: "ch_acme_1008",
+      id: "ch_harbor_1008",
       amount: 1200,
       amount_refunded: 0,
       currency: "usd",
       status: "pending",
       refunded: false,
       created: 1791055320,
-      description: "Acme Notes Pro — monthly",
-      customer: "cus_acme_ada",
+      description: "Harbor Pro — monthly",
+      customer: "cus_harbor_ada",
     },
     {
-      id: "ch_acme_1007",
+      id: "ch_harbor_1007",
       amount: 2900,
       amount_refunded: 0,
       currency: "usd",
       status: "failed",
       refunded: false,
       created: 1790583360,
-      description: "Acme Notes Pro — monthly",
-      customer: "cus_acme_cam",
+      description: "Harbor Pro — monthly",
+      customer: "cus_harbor_cam",
     },
     {
-      id: "ch_acme_1005",
+      id: "ch_harbor_1005",
       amount: 800,
       amount_refunded: 200,
       currency: "usd",
       status: "succeeded",
       refunded: false,
       created: 1789929720,
-      description: "Acme Notes export add-on",
-      customer: "cus_acme_bao",
+      description: "Harbor export add-on",
+      customer: "cus_harbor_bao",
     },
   ],
 };
@@ -57,7 +57,7 @@ beforeEach(() => {
 });
 
 describe("sales data panel", () => {
-  it("shows the seeded project's revenue", async () => {
+  it("shows revenue when sales data is bound", async () => {
     sessionStorage.setItem("admin1.token", "test-token");
     vi.stubGlobal(
       "fetch",
@@ -67,9 +67,9 @@ describe("sales data panel", () => {
           return json({ username: "dev" });
         }
         if (url === "/api/projects") {
-          return json([{ slug: "acme-notes", name: "Acme Notes", panels: ["sales-data"] }]);
+          return json([{ slug: "harbor", name: "Harbor", panels: ["sales-data"] }]);
         }
-        if (url === "/api/projects/acme-notes/revenue") {
+        if (url === "/api/projects/harbor/revenue") {
           return json(revenue);
         }
         throw new Error(`unexpected fetch ${url}`);
@@ -77,18 +77,18 @@ describe("sales data panel", () => {
     );
 
     render(
-      <MemoryRouter initialEntries={["/projects/acme-notes"]}>
+      <MemoryRouter initialEntries={["/projects/harbor"]}>
         <AuthProvider>
           <AppRoutes />
         </AuthProvider>
       </MemoryRouter>,
     );
 
-    expect(await screen.findByRole("heading", { name: "Acme Notes" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Harbor" })).toBeInTheDocument();
     expect(await screen.findByRole("article", { name: "Gross" })).toHaveTextContent("$159.00");
     expect(screen.getByRole("article", { name: "Refunded" })).toHaveTextContent("$17.00");
     expect(screen.getByRole("article", { name: "Net" })).toHaveTextContent("$142.00");
-    expect(screen.getByText("Acme Notes export add-on")).toBeInTheDocument();
+    expect(screen.getByText("Harbor export add-on")).toBeInTheDocument();
     expect(screen.getByText("partial refund")).toBeInTheDocument();
     expect(screen.getByText("failed")).toBeInTheDocument();
     expect(screen.getByText("pending")).toBeInTheDocument();

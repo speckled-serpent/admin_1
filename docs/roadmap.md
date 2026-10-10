@@ -12,6 +12,7 @@ The basic shell is in place. See [project.md](project.md).
 - Empty copy: "No projects started yet. Create one", with a **Create new project** button under it.
 - A persistent floating **+** / **Create New Project** on every authenticated page.
 - Create flow: name the project, then toggle panels. Confirm stores the project and its panel keys. The project tab opens with those panels in a rail. Every panel is Coming soon, except Sales data when that project already has a revenue fixture.
+- Delete project sits at the bottom of the rail. The operator types DELETE, and the project, its panels, and its sources are removed.
 
 Still open:
 

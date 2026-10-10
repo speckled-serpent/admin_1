@@ -21,7 +21,7 @@ from app.errors import (
 from app.models import Project, User
 from app.panels import PANELS
 from app.schemas import ChargeOut, PanelOut, ProjectCreate, ProjectDetail, ProjectOut, RevenueOut
-from app.services.projects import create_project, list_projects, panel_keys_for
+from app.services.projects import create_project, delete_project, list_projects, panel_keys_for
 from app.services.revenue import project_revenue
 
 router = APIRouter(tags=["projects"])
@@ -55,6 +55,18 @@ def create_project_route(
     except InvalidProject as exc:
         raise HTTPException(status_code=422, detail=exc.detail) from None
     return _detail(project)
+
+
+@router.delete("/projects/{slug}", status_code=204)
+def delete_project_route(
+    slug: str,
+    db: Annotated[Session, Depends(get_db)],
+    _user: Annotated[User, Depends(get_current_user)],
+) -> None:
+    try:
+        delete_project(db, slug)
+    except ProjectNotFound:
+        raise HTTPException(status_code=404, detail="Project not found") from None
 
 
 @router.get("/projects/{slug}/revenue", response_model=RevenueOut)

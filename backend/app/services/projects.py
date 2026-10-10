@@ -1,4 +1,4 @@
-"""Create and list projects and the panels chosen for each one."""
+"""Create, list, and delete projects and the panels chosen for each one."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ import re
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
-from app.errors import InvalidProject
+from app.errors import InvalidProject, ProjectNotFound
 from app.models import Project, ProjectPanel
 from app.panels import PANELS_BY_KEY, ordered_panel_keys
 
@@ -56,6 +56,14 @@ def create_project(db: Session, name: str, panel_keys: list[str]) -> Project:
     stored = db.scalar(select(Project).options(selectinload(Project.panels)).where(Project.id == project_id))
     assert stored is not None
     return stored
+
+
+def delete_project(db: Session, slug: str) -> None:
+    project = db.scalar(select(Project).where(Project.slug == slug))
+    if project is None:
+        raise ProjectNotFound()
+    db.delete(project)
+    db.commit()
 
 
 def _unique_slug(db: Session, base: str) -> str:

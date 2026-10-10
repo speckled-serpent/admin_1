@@ -66,11 +66,11 @@ The seed creates a single local user. There is no signup page and no remote iden
 
 ## The one wired path
 
-`Acme Notes` (`acme-notes`) is seeded with `fixture.revenue` pointing at `fixtures/acme_notes_charges.json`.
+`GET /api/projects/{slug}/revenue` reads a `project_sources` row for that project and returns the summary plus every charge, newest first. The default seed does not insert a project or that row. Tests bind `fixture.revenue` to `fixtures/acme_notes_charges.json` when they need the numbers.
 
-`GET /api/projects/acme-notes/revenue` reads that binding and returns the summary plus every charge, newest first.
+`DELETE /api/projects/{slug}` removes the project. Panels and sources go with it.
 
-Cost and health adapters and their fixture files exist so the next task can bind them. They have no service, route, or page yet. See [roadmap.md](roadmap.md).
+Cost and health adapters and their fixture files exist so a later task can bind them. They have no service, route, or page yet. See [roadmap.md](roadmap.md).
 
 ## Boot
 

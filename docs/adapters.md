@@ -18,7 +18,7 @@ Registered keys today:
 
 | Key | Class | Fixture shape | Wired through the API |
 | --- | --- | --- | --- |
-| `fixture.revenue` | `FixtureRevenueAdapter` | `{ "data": [ charge, ... ] }` | Yes, for Acme Notes |
+| `fixture.revenue` | `FixtureRevenueAdapter` | `{ "data": [ charge, ... ] }` | Yes, when a project source binds it |
 | `fixture.costs` | `FixtureCostAdapter` | `{ "items": [ cost, ... ] }` | No |
 | `fixture.health` | `FixtureHealthAdapter` | `{ "pings": [ ping, ... ] }` | No |
 
@@ -54,7 +54,7 @@ Seeded files:
 - `backend/fixtures/acme_notes_costs.json`
 - `backend/fixtures/acme_notes_health.json`
 
-Only the charges file is referenced by a `project_sources` row.
+The charges file is what the revenue route reads when a project source points at it. The default seed does not create that row.
 
 ## How to add a source
 
