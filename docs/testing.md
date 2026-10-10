@@ -33,11 +33,13 @@ Vitest uses jsdom. Tests stub `fetch`. They must not call the backend and must n
 
 - `src/test/format.test.ts` locks display of minor units and charge labels.
 - `src/test/Login.test.tsx` covers a successful sign-in, a 401 message, and the redirect when no token is stored.
-- `src/test/projects.test.tsx` covers the empty state, the create-project flow, and the panel rail.
+- `src/test/projects.test.tsx` covers the empty state, the create-project flow including Select data sources, and the panel rail.
 - `src/test/Dashboard.test.tsx` renders revenue totals from the Sales data panel.
 - `src/test/deleteProject.test.tsx` covers the delete confirmation: disabled until `DELETE`, Enter submits, Cancel and Escape close.
-- `src/test/dataSource.test.tsx` covers the panel data-source control: Fake, Push, HTTP health only where it applies, a key shown once, and Test connection.
-- `tests/test_connections.py` covers API key hashing, ingest auth, good, bad, and partial payloads, and the HTTP health connector with a fake transport. Those tests do not open a socket.
+- `src/test/deletePanel.test.tsx` covers the same confirmation for a panel, including the move to the next panel.
+- `src/test/dataSource.test.tsx` covers the panel settings route: Fake, Push, HTTP health only where it applies, a key shown once, and Test connection. The main panel page does not render that form.
+- `tests/test_connections.py` covers connection API key hashing, ingest auth, section routing across shared connections, good, bad, and partial payloads, delete panel, and the HTTP health connector with a fake transport. Those tests do not open a socket.
+- `tests/test_connection_migration.py` upgrades a database that still has per-panel sources and checks that push panels share one connection while HTTP health gets its own.
 
 Prefer queries by role and visible text. The display locale is `en-US` so `$159.00` is stable.
 

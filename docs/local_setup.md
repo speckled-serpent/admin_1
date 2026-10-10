@@ -27,7 +27,7 @@ make setup
 
 That target runs three steps:
 
-1. `install` creates `backend/.venv`, installs `backend/requirements.txt`, and runs `npm install` in `frontend/`.
+1. `install` creates `backend/.venv` when it is missing or has no pip, then installs `backend/requirements.txt` with `python -m pip` and runs `npm install` in `frontend/`. A venv that already has pip is left in place.
 2. `migrate` runs `alembic upgrade head`.
 3. `seed` creates the local user `dev` / `devpass` if that user is not already there. It does not create a project.
 
@@ -115,5 +115,5 @@ ss -ltnp 'sport = :5173'
 
 ## Other setup failures
 
-- `python3 -m venv backend/.venv` fails with `ensurepip` or `venv` missing: install `python3-venv`, then run `make setup` again.
+- `python3 -m venv backend/.venv` fails with `ensurepip` or `venv` missing: install `python3-venv`, then run `make setup` again. If the venv exists but `pip` is missing (some Python 3.14 installs do this), run `make setup` again. `install` deletes that venv, recreates it with `--upgrade-deps`, and runs `ensurepip --upgrade`.
 - The sign-in page cannot reach the API: the backend terminal should still be running, and the browser should be on http://127.0.0.1:5173. Port 8000 is the API only.

@@ -36,7 +36,11 @@ Adapters turn one local fixture into typed records. They do not know about HTTP,
 | `sessions` | SHA-256 of a bearer token, plus expiry |
 | `projects` | A software project (`slug`, display `name`) |
 | `project_sources` | One adapter binding per project per kind |
-| `project_panels` | Panel keys the operator turned on for a project. No data source is attached |
+| `project_panels` | Panel keys the operator turned on for a project |
+| `connections` | A named Push or HTTP health source. Credentials live here |
+| `connection_api_keys` | SHA-256 of a push connection's ingest key |
+| `panel_data_sources` | Fake, or a `connection_id` the panel reads |
+| `ingest_snapshots` | Latest accepted push section for one connection and kind |
 
 Kinds are `revenue`, `costs`, and `health`. A project has at most one row per kind. The row stores an `adapter_key` (for example `fixture.revenue`) and a `fixture_path` relative to `backend/`.
 
@@ -68,7 +72,7 @@ The seed creates a single local user. There is no signup page and no remote iden
 
 `GET /api/projects/{slug}/revenue` reads a `project_sources` row for that project and returns the summary plus every charge, newest first. The default seed does not insert a project or that row. Tests bind `fixture.revenue` to `fixtures/acme_notes_charges.json` when they need the numbers.
 
-`DELETE /api/projects/{slug}` removes the project. Panels, sources, API keys, and snapshots go with it.
+`DELETE /api/projects/{slug}` removes the project. Panels, sources, connections, API keys, and snapshots go with it. `DELETE /api/projects/{slug}/panels/{panel}` removes that panel only.
 
 Push ingest and the HTTP health connector write local rows. The dashboard does not call the network to render them. See [connectors.md](connectors.md).
 

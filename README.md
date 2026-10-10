@@ -99,15 +99,18 @@ The seed does not create a project or a source binding. Charge, cost, and health
 | `GET` | `/api/panel-catalog` | Panel checklist |
 | `GET` | `/api/projects` | Projects and their panels |
 | `POST` | `/api/projects` | Create a project and its panels |
-| `DELETE` | `/api/projects/{slug}` | Remove a project, its panels, sources, keys, and snapshots |
+| `DELETE` | `/api/projects/{slug}` | Remove a project, its panels, connections, keys, and snapshots |
+| `DELETE` | `/api/projects/{slug}/panels/{panel}` | Remove one panel. Shared connections stay |
 | `GET` | `/api/projects/{slug}/revenue` | One project's revenue, when a source is bound |
-| `GET` | `/api/projects/{slug}/data-sources` | Panel data sources and the active key prefix |
-| `PUT` | `/api/projects/{slug}/panels/{panel}/data-source` | Set Fake, Push, or HTTP health |
-| `POST` | `/api/projects/{slug}/api-key` | Generate a project API key (shown once) |
-| `POST` | `/api/projects/{slug}/api-key/rotate` | Revoke the active key and issue a new one |
-| `DELETE` | `/api/projects/{slug}/api-key` | Revoke the active key |
-| `POST` | `/api/projects/{slug}/panels/{panel}/test-connection` | Check the saved source |
-| `POST` | `/api/ingest/{slug}` | Push a version-1 payload (project API key, not the user session) |
+| `GET` | `/api/projects/{slug}/connections` | Named connections on the project |
+| `POST` | `/api/projects/{slug}/connections` | Create a Push or HTTP health connection |
+| `GET` | `/api/projects/{slug}/panels/{panel}/settings` | The panel's source, connection, and last received time |
+| `PUT` | `/api/projects/{slug}/panels/{panel}/settings` | Assign Fake, an existing connection, or a new one |
+| `POST` | `/api/projects/{slug}/connections/{id}/api-key` | Generate a connection API key (shown once) |
+| `POST` | `/api/projects/{slug}/connections/{id}/api-key/rotate` | Revoke the active key and issue a new one |
+| `DELETE` | `/api/projects/{slug}/connections/{id}/api-key` | Revoke the active key |
+| `POST` | `/api/projects/{slug}/panels/{panel}/test-connection` | Check the panel's connection |
+| `POST` | `/api/ingest/{slug}` | Push a version-1 payload (connection API key, not the user session) |
 
 Money in JSON is integer minor units. `usd` `15900` is 159.00 dollars.
 

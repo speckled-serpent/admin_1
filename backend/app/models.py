@@ -53,7 +53,7 @@ class Project(Base):
         back_populates="project",
         cascade="all, delete-orphan",
     )
-    api_keys: Mapped[list[ProjectApiKey]] = relationship(
+    connections: Mapped[list[Connection]] = relationship(
         back_populates="project",
         cascade="all, delete-orphan",
     )
@@ -101,29 +101,54 @@ class ProjectPanel(Base):
     project: Mapped[Project] = relationship(back_populates="panels")
 
 
-class ProjectApiKey(Base):
-    """Per-project ingest credential. Only the SHA-256 of the key is stored."""
+class Connection(Base):
+    """A named server or service for one project. Panels reference it; they do not own credentials."""
 
-    __tablename__ = "project_api_keys"
+    __tablename__ = "connections"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     project_id: Mapped[int] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    kind: Mapped[str] = mapped_column(String(32), nullable=False)
+    url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    expected_status: Mapped[int | None] = mapped_column(nullable=True)
+    timeout_seconds: Mapped[int | None] = mapped_column(nullable=True)
+    secret_ciphertext: Mapped[str | None] = mapped_column(Text, nullable=True)
+    last_received_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_status: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+
+    project: Mapped[Project] = relationship(back_populates="connections")
+    api_keys: Mapped[list[ConnectionApiKey]] = relationship(
+        back_populates="connection",
+        cascade="all, delete-orphan",
+    )
+
+
+class ConnectionApiKey(Base):
+    """Ingest credential for one push connection. Only the SHA-256 of the key is stored."""
+
+    __tablename__ = "connection_api_keys"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    connection_id: Mapped[int] = mapped_column(ForeignKey("connections.id", ondelete="CASCADE"), nullable=False)
     key_hash: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
     prefix: Mapped[str] = mapped_column(String(16), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    project: Mapped[Project] = relationship(back_populates="api_keys")
+    connection: Mapped[Connection] = relationship(back_populates="api_keys")
 
 
 class IngestSnapshot(Base):
-    """Latest accepted push payload for one kind. The dashboard reads this table, not the network."""
+    """Latest accepted push section for one connection. The dashboard reads this table, not the network."""
 
     __tablename__ = "ingest_snapshots"
-    __table_args__ = (UniqueConstraint("project_id", "kind", name="uq_ingest_snapshot_kind"),)
+    __table_args__ = (UniqueConstraint("connection_id", "kind", name="uq_ingest_snapshot_connection_kind"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     project_id: Mapped[int] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
+    connection_id: Mapped[int] = mapped_column(ForeignKey("connections.id", ondelete="CASCADE"), nullable=False)
     kind: Mapped[str] = mapped_column(String(32), nullable=False)
     schema_version: Mapped[int] = mapped_column(nullable=False)
     body: Mapped[str] = mapped_column(Text, nullable=False)
@@ -133,7 +158,7 @@ class IngestSnapshot(Base):
 
 
 class PanelDataSource(Base):
-    """How one panel is fed: local fixtures, push ingest, or a pull connector."""
+    """Which connection feeds one panel. Fake leaves connection_id empty."""
 
     __tablename__ = "panel_data_sources"
     __table_args__ = (UniqueConstraint("project_id", "panel_key", name="uq_panel_data_source"),)
@@ -142,10 +167,7 @@ class PanelDataSource(Base):
     project_id: Mapped[int] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
     panel_key: Mapped[str] = mapped_column(String(64), nullable=False)
     mode: Mapped[str] = mapped_column(String(32), nullable=False, default="fake")
-    url: Mapped[str | None] = mapped_column(Text, nullable=True)
-    expected_status: Mapped[int | None] = mapped_column(nullable=True)
-    timeout_seconds: Mapped[int | None] = mapped_column(nullable=True)
-    secret_ciphertext: Mapped[str | None] = mapped_column(Text, nullable=True)
+    connection_id: Mapped[int | None] = mapped_column(ForeignKey("connections.id", ondelete="SET NULL"), nullable=True)
     last_received_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     last_status: Mapped[str | None] = mapped_column(String(32), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)

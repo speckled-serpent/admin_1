@@ -461,6 +461,12 @@ th {
   flex: 1 1 auto;
 }
 
+.rail-row {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
 .rail button {
   width: 100%;
   text-align: left;
@@ -473,17 +479,54 @@ th {
   font-size: 0.95rem;
 }
 
-.rail button[aria-current="page"] {
+.rail-row > button {
+  flex: 1 1 auto;
+  width: auto;
+}
+
+.rail-cog {
+  flex: 0 0 2.1rem;
+  width: 2.1rem;
+  height: 2.1rem;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.rail button[aria-current="page"],
+.rail-cog[aria-current="page"] {
   background: var(--green-soft);
   color: var(--green);
 }
 
-.rail .rail-delete {
+.rail-actions {
   margin-top: auto;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.rail .rail-delete {
+  margin-top: 0;
   text-align: center;
   color: var(--coral);
   border: 1px solid var(--coral);
   background: transparent;
+}
+
+.source-list {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.source-row {
+  display: grid;
+  gap: 0.7rem;
+  margin: 0;
+  padding: 0.85rem 0 0;
+  border: 0;
+  border-top: 1px solid var(--line);
 }
 
 .modal-backdrop {

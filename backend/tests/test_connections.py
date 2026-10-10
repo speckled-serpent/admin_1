@@ -11,7 +11,7 @@ from app.crypto import decrypt_secret
 from app.errors import InvalidPayload
 from app.ingest_schema import validate_ingest
 from app.main import app
-from app.models import IngestSnapshot, PanelDataSource, Project, ProjectApiKey, ProjectPanel
+from app.models import Connection, ConnectionApiKey, IngestSnapshot, PanelDataSource, Project, ProjectPanel
 from app.security import hash_token
 from app.services.auth import register_user
 from app.services.connections import poll_due_http_health
@@ -64,6 +64,12 @@ def _good_payload() -> dict:
     }
 
 
+def _assign(client: TestClient, headers: dict[str, str], slug: str, panel: str, body: dict) -> dict:
+    saved = client.put(f"/api/projects/{slug}/panels/{panel}/settings", headers=headers, json=body)
+    assert saved.status_code == 200, saved.text
+    return saved.json()
+
+
 def test_ingest_schema_accepts_a_full_payload_and_rejects_bad_and_partial_sections() -> None:
     accepted = validate_ingest(_good_payload())
     assert set(accepted) == {"health", "users", "revenue", "costs"}
@@ -106,16 +112,15 @@ def test_api_key_is_stored_as_a_hash_and_ingest_checks_it(
         json={"name": "Harbor", "panels": ["system-health", "user-data", "sales-data"]},
     )
     assert created.status_code == 201
-    client.put(
-        "/api/projects/harbor/panels/system-health/data-source",
-        headers=headers,
-        json={"mode": "push"},
+    health = _assign(
+        client,
+        headers,
+        "harbor",
+        "system-health",
+        {"mode": "push", "new_connection": {"name": "App", "kind": "push"}},
     )
-    client.put(
-        "/api/projects/harbor/panels/user-data/data-source",
-        headers=headers,
-        json={"mode": "push"},
-    )
+    connection_id = health["connection_id"]
+    _assign(client, headers, "harbor", "user-data", {"mode": "push", "connection_id": connection_id})
 
     denied = client.post("/api/ingest/harbor", json=_good_payload())
     assert denied.status_code == 401
@@ -123,7 +128,7 @@ def test_api_key_is_stored_as_a_hash_and_ingest_checks_it(
     session_as_key = client.post("/api/ingest/harbor", headers=headers, json=_good_payload())
     assert session_as_key.status_code == 401
 
-    issued = client.post("/api/projects/harbor/api-key", headers=headers)
+    issued = client.post(f"/api/projects/harbor/connections/{connection_id}/api-key", headers=headers)
     assert issued.status_code == 201
     plaintext = issued.json()["key"]
     assert plaintext.startswith("a1_")
@@ -131,26 +136,21 @@ def test_api_key_is_stored_as_a_hash_and_ingest_checks_it(
 
     db = session_factory()
     try:
-        stored = db.query(ProjectApiKey).one()
+        stored = db.query(ConnectionApiKey).one()
         assert stored.key_hash == hash_token(plaintext)
         assert plaintext not in stored.key_hash
         assert plaintext not in stored.prefix
-        dumped = json.dumps(
-            {
-                "hash": stored.key_hash,
-                "prefix": stored.prefix,
-            }
-        )
+        dumped = json.dumps({"hash": stored.key_hash, "prefix": stored.prefix})
         assert plaintext not in dumped
     finally:
         db.close()
 
-    listed = client.get("/api/projects/harbor/data-sources", headers=headers)
+    listed = client.get("/api/projects/harbor/panels/system-health/settings", headers=headers)
     assert listed.status_code == 200
-    assert listed.json()["api_key"]["prefix"] == plaintext[:12]
+    assert listed.json()["connections"][0]["api_key"]["prefix"] == plaintext[:12]
     assert plaintext not in listed.text
 
-    duplicate = client.post("/api/projects/harbor/api-key", headers=headers)
+    duplicate = client.post(f"/api/projects/harbor/connections/{connection_id}/api-key", headers=headers)
     assert duplicate.status_code == 422
 
     ingested = client.post(
@@ -170,7 +170,7 @@ def test_api_key_is_stored_as_a_hash_and_ingest_checks_it(
     )
     assert wrong_project.status_code == 401
 
-    rotated = client.post("/api/projects/harbor/api-key/rotate", headers=headers)
+    rotated = client.post(f"/api/projects/harbor/connections/{connection_id}/api-key/rotate", headers=headers)
     assert rotated.status_code == 201
     new_key = rotated.json()["key"]
     assert new_key != plaintext
@@ -188,7 +188,7 @@ def test_api_key_is_stored_as_a_hash_and_ingest_checks_it(
     assert fresh.status_code == 200
     assert fresh.json()["accepted"] == ["health"]
 
-    revoked = client.delete("/api/projects/harbor/api-key", headers=headers)
+    revoked = client.delete(f"/api/projects/harbor/connections/{connection_id}/api-key", headers=headers)
     assert revoked.status_code == 204
     after_revoke = client.post(
         "/api/ingest/harbor",
@@ -198,6 +198,100 @@ def test_api_key_is_stored_as_a_hash_and_ingest_checks_it(
     assert after_revoke.status_code == 401
 
 
+def test_shared_connection_routes_sections_by_panel_type(
+    client: TestClient,
+    session_factory: sessionmaker[Session],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    headers = _auth(client, session_factory, monkeypatch)
+    created = client.post(
+        "/api/projects",
+        headers=headers,
+        json={
+            "name": "Harbor",
+            "panels": ["system-health", "user-data", "sales-data"],
+            "connections": [
+                {"key": "app", "name": "App server", "kind": "push"},
+                {"key": "billing", "name": "Billing", "kind": "push"},
+            ],
+            "sources": [
+                {"panel": "system-health", "mode": "push", "connection": "app"},
+                {"panel": "user-data", "mode": "push", "connection": "app"},
+                {"panel": "sales-data", "mode": "push", "connection": "billing"},
+            ],
+        },
+    )
+    assert created.status_code == 201
+
+    db = session_factory()
+    try:
+        connections = list(db.scalars(select(Connection).order_by(Connection.id)))
+        assert [row.name for row in connections] == ["App server", "Billing"]
+        app_id, billing_id = connections[0].id, connections[1].id
+    finally:
+        db.close()
+
+    app_key = client.post(f"/api/projects/harbor/connections/{app_id}/api-key", headers=headers).json()["key"]
+    billing_key = client.post(f"/api/projects/harbor/connections/{billing_id}/api-key", headers=headers).json()["key"]
+
+    ingested = client.post(
+        "/api/ingest/harbor",
+        headers={"Authorization": f"Bearer {app_key}"},
+        json=_good_payload(),
+    )
+    assert ingested.status_code == 200
+
+    db = session_factory()
+    try:
+        health = db.scalar(select(PanelDataSource).where(PanelDataSource.panel_key == "system-health"))
+        users = db.scalar(select(PanelDataSource).where(PanelDataSource.panel_key == "user-data"))
+        sales = db.scalar(select(PanelDataSource).where(PanelDataSource.panel_key == "sales-data"))
+        assert health is not None and users is not None and sales is not None
+        assert health.connection_id == users.connection_id == app_id
+        assert sales.connection_id == billing_id
+        assert health.last_status == "up"
+        assert users.last_received_at is not None
+        assert sales.last_received_at is None
+        app_kinds = {
+            row.kind
+            for row in db.scalars(select(IngestSnapshot).where(IngestSnapshot.connection_id == app_id))
+        }
+        assert app_kinds == {"health", "users", "revenue", "costs"}
+        assert list(db.scalars(select(IngestSnapshot).where(IngestSnapshot.connection_id == billing_id))) == []
+    finally:
+        db.close()
+
+    sales_payload = {
+        "schema_version": 1,
+        "health": {"status": "down", "checked_at": AS_OF, "latency_ms": 9},
+        "revenue": _good_payload()["revenue"],
+    }
+    billed = client.post(
+        "/api/ingest/harbor",
+        headers={"Authorization": f"Bearer {billing_key}"},
+        json=sales_payload,
+    )
+    assert billed.status_code == 200
+
+    db = session_factory()
+    try:
+        health = db.scalar(select(PanelDataSource).where(PanelDataSource.panel_key == "system-health"))
+        sales = db.scalar(select(PanelDataSource).where(PanelDataSource.panel_key == "sales-data"))
+        assert health is not None and sales is not None
+        assert health.last_status == "up"
+        assert sales.last_received_at is not None
+        billing_health = db.scalar(
+            select(IngestSnapshot).where(
+                IngestSnapshot.connection_id == billing_id,
+                IngestSnapshot.kind == "health",
+            )
+        )
+        assert billing_health is not None
+        assert json.loads(billing_health.body)["status"] == "down"
+    finally:
+        db.close()
+
+
 def test_ingest_writes_only_valid_sections(
     client: TestClient,
     session_factory: sessionmaker[Session],
@@ -205,14 +299,15 @@ def test_ingest_writes_only_valid_sections(
 ) -> None:
     headers = _auth(client, session_factory, monkeypatch)
     client.post("/api/projects", headers=headers, json={"name": "Lumen", "panels": ["system-health", "user-data"]})
-    client.put(
-        "/api/projects/lumen/panels/system-health/data-source",
-        headers=headers,
-        json={"mode": "push"},
+    settings = _assign(
+        client,
+        headers,
+        "lumen",
+        "system-health",
+        {"mode": "push", "new_connection": {"name": "App", "kind": "push"}},
     )
-    issued = client.post("/api/projects/lumen/api-key", headers=headers)
-    key = issued.json()["key"]
-    key_headers = {"Authorization": f"Bearer {key}"}
+    issued = client.post(f"/api/projects/lumen/connections/{settings['connection_id']}/api-key", headers=headers)
+    key_headers = {"Authorization": f"Bearer {issued.json()['key']}"}
 
     bad = client.post(
         "/api/ingest/lumen",
@@ -250,13 +345,12 @@ def test_ingest_writes_only_valid_sections(
     finally:
         db.close()
 
-    sources = client.get("/api/projects/lumen/data-sources", headers=headers)
-    health = next(item for item in sources.json()["panels"] if item["panel_key"] == "system-health")
-    assert health["last_status"] == "up"
-    assert health["last_received_at"] is not None
-    assert health["allowed_modes"] == ["fake", "push", "http-health"]
-    logs_missing = [item for item in sources.json()["panels"] if item["panel_key"] == "logs"]
-    assert logs_missing == []
+    sources = client.get("/api/projects/lumen/panels/system-health/settings", headers=headers)
+    assert sources.json()["last_status"] == "up"
+    assert sources.json()["last_received_at"] is not None
+    assert sources.json()["allowed_modes"] == ["fake", "push", "http-health"]
+    logs = client.get("/api/projects/lumen/panels/logs/settings", headers=headers)
+    assert logs.status_code == 422
 
 
 def test_http_health_connector_uses_the_injected_client(
@@ -266,24 +360,29 @@ def test_http_health_connector_uses_the_injected_client(
 ) -> None:
     headers = _auth(client, session_factory, monkeypatch)
     client.post("/api/projects", headers=headers, json={"name": "Harbor", "panels": ["system-health", "logs"]})
-    saved = client.put(
-        "/api/projects/harbor/panels/system-health/data-source",
-        headers=headers,
-        json={
+    saved = _assign(
+        client,
+        headers,
+        "harbor",
+        "system-health",
+        {
             "mode": "http-health",
-            "url": "https://harbor.example/health",
-            "expected_status": 204,
-            "timeout_seconds": 3,
-            "secret": "harbor-token",
+            "new_connection": {
+                "name": "Harbor probe",
+                "kind": "http-health",
+                "url": "https://harbor.example/health",
+                "expected_status": 204,
+                "timeout_seconds": 3,
+                "secret": "harbor-token",
+            },
         },
     )
-    assert saved.status_code == 200
-    assert saved.json()["has_secret"] is True
-    assert "harbor-token" not in saved.text
+    assert saved["connections"][0]["has_secret"] is True
+    assert "harbor-token" not in json.dumps(saved)
 
     db = session_factory()
     try:
-        row = db.scalar(select(PanelDataSource).where(PanelDataSource.panel_key == "system-health"))
+        row = db.scalar(select(Connection).where(Connection.kind == "http-health"))
         assert row is not None
         assert row.secret_ciphertext is not None
         assert "harbor-token" not in row.secret_ciphertext
@@ -292,9 +391,18 @@ def test_http_health_connector_uses_the_injected_client(
         db.close()
 
     logs = client.put(
-        "/api/projects/harbor/panels/logs/data-source",
+        "/api/projects/harbor/panels/logs/settings",
         headers=headers,
-        json={"mode": "http-health", "url": "https://harbor.example/health", "expected_status": 200, "timeout_seconds": 3},
+        json={
+            "mode": "http-health",
+            "new_connection": {
+                "name": "Logs probe",
+                "kind": "http-health",
+                "url": "https://harbor.example/health",
+                "expected_status": 200,
+                "timeout_seconds": 3,
+            },
+        },
     )
     assert logs.status_code == 422
 
@@ -327,14 +435,51 @@ def test_http_health_connector_uses_the_injected_client(
         quiet = FakeHttp(status_code=204)
         assert poll_due_http_health(db, quiet, now) == []
         assert quiet.calls == []
-        row = db.scalar(select(PanelDataSource).where(PanelDataSource.panel_key == "system-health"))
-        assert row is not None
-        row.last_received_at = now - timedelta(seconds=301)
+        connection = db.scalar(select(Connection).where(Connection.kind == "http-health"))
+        assert connection is not None
+        connection.last_received_at = now - timedelta(seconds=301)
         db.commit()
         again = FakeHttp(status_code=204)
         checked_ids = poll_due_http_health(db, again, now)
-        assert checked_ids == [row.id]
+        assert checked_ids == [connection.id]
         assert again.calls[0][0] == "https://harbor.example/health"
+    finally:
+        db.close()
+
+
+def test_delete_panel_keeps_the_shared_connection(
+    client: TestClient,
+    session_factory: sessionmaker[Session],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    headers = _auth(client, session_factory, monkeypatch)
+    client.post(
+        "/api/projects",
+        headers=headers,
+        json={"name": "Harbor", "panels": ["system-health", "user-data"]},
+    )
+    settings = _assign(
+        client,
+        headers,
+        "harbor",
+        "system-health",
+        {"mode": "push", "new_connection": {"name": "App", "kind": "push"}},
+    )
+    connection_id = settings["connection_id"]
+    _assign(client, headers, "harbor", "user-data", {"mode": "push", "connection_id": connection_id})
+    removed = client.delete("/api/projects/harbor/panels/system-health", headers=headers)
+    assert removed.status_code == 204
+    listed = client.get("/api/projects", headers=headers)
+    assert listed.json()[0]["panels"] == ["user-data"]
+
+    db = session_factory()
+    try:
+        assert db.query(Connection).count() == 1
+        assert db.query(ProjectPanel).count() == 1
+        users = db.scalar(select(PanelDataSource).where(PanelDataSource.panel_key == "user-data"))
+        assert users is not None
+        assert users.connection_id == connection_id
+        assert db.scalar(select(PanelDataSource).where(PanelDataSource.panel_key == "system-health")) is None
     finally:
         db.close()
 
@@ -346,12 +491,17 @@ def test_delete_project_removes_keys_snapshots_and_sources(
 ) -> None:
     headers = _auth(client, session_factory, monkeypatch)
     client.post("/api/projects", headers=headers, json={"name": "Harbor", "panels": ["system-health"]})
-    client.put(
-        "/api/projects/harbor/panels/system-health/data-source",
-        headers=headers,
-        json={"mode": "push"},
+    settings = _assign(
+        client,
+        headers,
+        "harbor",
+        "system-health",
+        {"mode": "push", "new_connection": {"name": "App", "kind": "push"}},
     )
-    issued = client.post("/api/projects/harbor/api-key", headers=headers)
+    issued = client.post(
+        f"/api/projects/harbor/connections/{settings['connection_id']}/api-key",
+        headers=headers,
+    )
     client.post(
         "/api/ingest/harbor",
         headers={"Authorization": f"Bearer {issued.json()['key']}"},
@@ -363,7 +513,8 @@ def test_delete_project_removes_keys_snapshots_and_sources(
     try:
         assert db.query(Project).count() == 0
         assert db.query(ProjectPanel).count() == 0
-        assert db.query(ProjectApiKey).count() == 0
+        assert db.query(Connection).count() == 0
+        assert db.query(ConnectionApiKey).count() == 0
         assert db.query(IngestSnapshot).count() == 0
         assert db.query(PanelDataSource).count() == 0
     finally:

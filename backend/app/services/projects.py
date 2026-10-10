@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session, selectinload
 from app.errors import InvalidProject, ProjectNotFound
 from app.models import PanelDataSource, Project, ProjectPanel
 from app.panels import PANELS_BY_KEY, ordered_panel_keys
+from app.services.connections import attach_initial_sources
 
 _SLUG_RE = re.compile(r"[^a-z0-9]+")
 
@@ -28,7 +29,14 @@ def panel_keys_for(project: Project) -> list[str]:
     return ordered_panel_keys(selected)
 
 
-def create_project(db: Session, name: str, panel_keys: list[str]) -> Project:
+def create_project(
+    db: Session,
+    name: str,
+    panel_keys: list[str],
+    *,
+    connections: list[dict] | None = None,
+    sources: list[dict] | None = None,
+) -> Project:
     cleaned = name.strip()
     if not cleaned:
         raise InvalidProject("Name is required")
@@ -51,7 +59,7 @@ def create_project(db: Session, name: str, panel_keys: list[str]) -> Project:
     db.flush()
     for key in selected:
         db.add(ProjectPanel(project_id=project.id, panel_key=key))
-        db.add(PanelDataSource(project_id=project.id, panel_key=key, mode="fake"))
+    attach_initial_sources(db, project, selected, connections, sources)
     project_id = project.id
     db.commit()
     stored = db.scalar(select(Project).options(selectinload(Project.panels)).where(Project.id == project_id))
@@ -64,6 +72,25 @@ def delete_project(db: Session, slug: str) -> None:
     if project is None:
         raise ProjectNotFound()
     db.delete(project)
+    db.commit()
+
+
+def delete_panel(db: Session, slug: str, panel_key: str) -> None:
+    project = db.scalar(select(Project).options(selectinload(Project.panels)).where(Project.slug == slug))
+    if project is None:
+        raise ProjectNotFound()
+    panel = next((row for row in project.panels if row.panel_key == panel_key), None)
+    if panel is None:
+        raise ProjectNotFound()
+    source = db.scalar(
+        select(PanelDataSource).where(
+            PanelDataSource.project_id == project.id,
+            PanelDataSource.panel_key == panel_key,
+        )
+    )
+    if source is not None:
+        db.delete(source)
+    db.delete(panel)
     db.commit()
 
 
