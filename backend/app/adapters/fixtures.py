@@ -65,7 +65,7 @@ class FixtureRevenueAdapter:
 
 
 class FixtureCostAdapter:
-    """Reads cost line items from a local JSON list. Not wired to the API."""
+    """Reads cost line items from a local JSON list."""
 
     key = "fixture.costs"
 
@@ -81,7 +81,7 @@ class FixtureCostAdapter:
 
 
 class FixtureHealthAdapter:
-    """Reads health pings from a local JSON list. Not wired to the API."""
+    """Reads health pings from a local JSON list."""
 
     key = "fixture.health"
 

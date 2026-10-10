@@ -342,7 +342,7 @@ def test_connection(db: Session, project: Project, panel_key: str, client: HttpC
 def poll_due_http_health(db: Session, client: HttpClient, now: datetime) -> list[int]:
     """Check HTTP health connections whose last receipt is older than the poll interval.
 
-    Nothing in this process starts a timer. A later scheduler calls this.
+    Nothing in this process starts a timer. A scheduler calls this.
     """
     rows = list(db.scalars(select(Connection).where(Connection.kind == MODE_HTTP_HEALTH)))
     checked: list[int] = []

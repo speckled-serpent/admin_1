@@ -211,4 +211,61 @@ describe("projects", () => {
       { panel: "sales-data", mode: "fake", connection: null },
     ]);
   });
+
+  it("shows fixture revenue after creating Sales data on Fake", async () => {
+    const user = userEvent.setup();
+    sessionStorage.setItem("admin1.token", "test-token");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (url === "/api/auth/me") {
+          return json({ username: "dev" });
+        }
+        if (url === "/api/panel-catalog") {
+          return json(catalog);
+        }
+        if (url === "/api/projects" && init?.method === "POST") {
+          const body = JSON.parse(String(init.body)) as {
+            sources: Array<{ panel: string; mode: string; connection: string | null }>;
+          };
+          const sales = body.sources.find((source) => source.panel === "sales-data");
+          if (sales?.mode !== "fake" || sales.connection !== null) {
+            throw new Error("Sales data was not created on Fake");
+          }
+          return json({ slug: "harbor", name: "Harbor", panels: ["sales-data"] }, 201);
+        }
+        if (url === "/api/projects") {
+          return json([]);
+        }
+        if (url === "/api/projects/harbor/revenue") {
+          return json({
+            project: { slug: "harbor", name: "Harbor" },
+            currency: "usd",
+            gross_amount: 15900,
+            refunded_amount: 1700,
+            net_amount: 14200,
+            charge_count: 8,
+            succeeded_count: 6,
+            refunded_count: 2,
+            charges: [],
+          });
+        }
+        throw new Error(`unexpected fetch ${url}`);
+      }),
+    );
+
+    renderAt("/create");
+    await user.type(await screen.findByLabelText("Project name"), "Harbor");
+    await user.click(screen.getByRole("button", { name: "Sales data" }));
+    await user.click(screen.getByRole("button", { name: "Next" }));
+    expect(await screen.findByRole("heading", { name: "Select data sources" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Sales data source")).toHaveValue("fake");
+    await user.click(screen.getByRole("button", { name: "Confirm" }));
+
+    expect(await screen.findByRole("heading", { name: "Harbor" })).toBeInTheDocument();
+    expect(await screen.findByRole("article", { name: "Gross" })).toHaveTextContent("$159.00");
+    expect(screen.getByRole("article", { name: "Net" })).toHaveTextContent("$142.00");
+    expect(screen.queryByRole("heading", { name: "Coming soon" })).not.toBeInTheDocument();
+  });
 });

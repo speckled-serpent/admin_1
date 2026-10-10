@@ -20,6 +20,9 @@ Conventions:
 - Adapter tests call the fake classes on the JSON files. They do not boot the ASGI app.
 - API tests use `TestClient` and the dependency override for `get_db`. Login through `POST /api/auth/login`; do not hardcode a session row unless the test is about expiry.
 - `tests/test_migrations.py` runs `alembic upgrade head` and compares column names to the SQLAlchemy models. If you add a column, add it to the migration and the model together.
+- `tests/test_fake_revenue.py` creates a project through `POST /api/projects` and changes Sales data through panel settings. Fake returns the charges fixture. Push stores a revenue snapshot and does not render it. Those tests do not insert a `project_sources` row.
+- `tests/test_connections.py` covers connection API key hashing, ingest auth, section routing across shared connections, good, bad, and partial payloads, delete panel, and the HTTP health connector with a fake transport. Those tests do not open a socket.
+- `tests/test_connection_migration.py` upgrades a database that still has per-panel sources and checks that push panels share one connection while HTTP health gets its own.
 
 `FixtureError` on a malformed record is part of the current adapter contract. A dedicated bad-data or partial-data suite is out of scope until a second adapter exists.
 
@@ -33,13 +36,11 @@ Vitest uses jsdom. Tests stub `fetch`. They must not call the backend and must n
 
 - `src/test/format.test.ts` locks display of minor units and charge labels.
 - `src/test/Login.test.tsx` covers a successful sign-in, a 401 message, and the redirect when no token is stored.
-- `src/test/projects.test.tsx` covers the empty state, the create-project flow including Select data sources, and the panel rail.
-- `src/test/Dashboard.test.tsx` renders revenue totals from the Sales data panel.
+- `src/test/projects.test.tsx` covers the empty state, the create-project flow including Select data sources, the panel rail, and creating Sales data on Fake so the revenue response renders.
+- `src/test/Dashboard.test.tsx` renders revenue totals from the Sales data panel, including after panel settings are set to Fake.
 - `src/test/deleteProject.test.tsx` covers the delete confirmation: disabled until `DELETE`, Enter submits, Cancel and Escape close.
 - `src/test/deletePanel.test.tsx` covers the same confirmation for a panel, including the move to the next panel.
 - `src/test/dataSource.test.tsx` covers the panel settings route: Fake, Push, HTTP health only where it applies, a key shown once, and Test connection. The main panel page does not render that form.
-- `tests/test_connections.py` covers connection API key hashing, ingest auth, section routing across shared connections, good, bad, and partial payloads, delete panel, and the HTTP health connector with a fake transport. Those tests do not open a socket.
-- `tests/test_connection_migration.py` upgrades a database that still has per-panel sources and checks that push panels share one connection while HTTP health gets its own.
 
 Prefer queries by role and visible text. The display locale is `en-US` so `$159.00` is stable.
 

@@ -5,15 +5,19 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.adapters.registry import build_revenue_adapter, resolve_fixture_path
 from app.adapters.types import Charge
 from app.config import Settings
 from app.errors import MixedCurrencyError, ProjectNotFound, SourceNotConfigured
-from app.models import Project, ProjectSource
+from app.models import PanelDataSource, Project
+from app.panels import SALES_DATA
+from app.services.connections import MODE_FAKE
 
 KIND_REVENUE = "revenue"
+FAKE_REVENUE_ADAPTER = "fixture.revenue"
+FAKE_REVENUE_FIXTURE = "fixtures/acme_notes_charges.json"
 
 
 @dataclass(frozen=True)
@@ -58,18 +62,23 @@ def summarize_charges(charges: list[Charge]) -> RevenueSummary:
 
 
 def project_revenue(db: Session, settings: Settings, slug: str) -> tuple[Project, RevenueSummary]:
-    project = db.scalar(select(Project).where(Project.slug == slug))
+    """Return fixture revenue when the Sales data panel is Fake.
+
+    Push revenue stays in ``ingest_snapshots`` and is not rendered here.
+    """
+    project = db.scalar(select(Project).options(selectinload(Project.panels)).where(Project.slug == slug))
     if project is None:
         raise ProjectNotFound(slug)
+    enabled = {panel.panel_key for panel in project.panels}
     source = db.scalar(
-        select(ProjectSource).where(
-            ProjectSource.project_id == project.id,
-            ProjectSource.kind == KIND_REVENUE,
+        select(PanelDataSource).where(
+            PanelDataSource.project_id == project.id,
+            PanelDataSource.panel_key == SALES_DATA,
         )
     )
-    if source is None:
+    if SALES_DATA not in enabled or source is None or source.mode != MODE_FAKE:
         raise SourceNotConfigured(slug)
-    path = resolve_fixture_path(settings, source.fixture_path)
-    adapter = build_revenue_adapter(source.adapter_key, path)
+    path = resolve_fixture_path(settings, FAKE_REVENUE_FIXTURE)
+    adapter = build_revenue_adapter(FAKE_REVENUE_ADAPTER, path)
     return project, summarize_charges(adapter.list_charges())
 

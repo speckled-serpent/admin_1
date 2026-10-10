@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AppRoutes } from "../App";
@@ -96,6 +97,89 @@ describe("sales data panel", () => {
     expect(screen.getByText("failed")).toBeInTheDocument();
     expect(screen.getByText("pending")).toBeInTheDocument();
     expect(screen.getByText("dev")).toBeInTheDocument();
+  });
+
+  it("shows fixture revenue after Sales data settings are set to Fake", async () => {
+    const user = userEvent.setup();
+    sessionStorage.setItem("admin1.token", "test-token");
+    let mode = "push";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        const method = init?.method ?? "GET";
+        if (url === "/api/auth/me") {
+          return json({ username: "dev" });
+        }
+        if (url === "/api/projects") {
+          return json([{ slug: "harbor", name: "Harbor", panels: ["sales-data"] }]);
+        }
+        if (url === "/api/projects/harbor/revenue") {
+          if (mode !== "fake") {
+            return json({ detail: "No revenue source is configured for this project" }, 404);
+          }
+          return json(revenue);
+        }
+        if (url === "/api/projects/harbor/panels/sales-data/settings" && method === "GET") {
+          return json({
+            panel_key: "sales-data",
+            mode,
+            connection_id: mode === "push" ? 4 : null,
+            allowed_modes: ["fake", "push"],
+            last_received_at: null,
+            last_status: null,
+            connections: [
+              {
+                id: 4,
+                name: "Billing",
+                kind: "push",
+                url: null,
+                expected_status: null,
+                timeout_seconds: null,
+                has_secret: false,
+                api_key: null,
+                last_received_at: null,
+                last_status: null,
+              },
+            ],
+          });
+        }
+        if (url === "/api/projects/harbor/panels/sales-data/settings" && method === "PUT") {
+          const body = JSON.parse(String(init?.body)) as { mode: string };
+          mode = body.mode;
+          return json({
+            panel_key: "sales-data",
+            mode,
+            connection_id: null,
+            allowed_modes: ["fake", "push"],
+            last_received_at: null,
+            last_status: null,
+            connections: [],
+          });
+        }
+        throw new Error(`unexpected fetch ${method} ${url}`);
+      }),
+    );
+
+    render(
+      <MemoryRouter initialEntries={["/projects/harbor"]}>
+        <AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByRole("heading", { name: "Coming soon" })).toBeInTheDocument();
+    await user.click(screen.getByRole("link", { name: "Sales data settings" }));
+    const source = await screen.findByLabelText("Data source");
+    expect(source).toHaveValue("push");
+    await user.selectOptions(source, "fake");
+    await user.click(screen.getByRole("button", { name: "Save data source" }));
+    await user.click(screen.getByRole("button", { name: "Sales data" }));
+
+    expect(await screen.findByRole("article", { name: "Gross" })).toHaveTextContent("$159.00");
+    expect(screen.getByRole("article", { name: "Net" })).toHaveTextContent("$142.00");
+    expect(screen.queryByRole("heading", { name: "Coming soon" })).not.toBeInTheDocument();
   });
 });
 

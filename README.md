@@ -68,7 +68,7 @@ After sign-in the top bar leads with Overview, then one tab per project. With no
 
 On a project page the left rail lists the panels. A cog opens that panel's settings. **Delete panel** and **Delete project** sit at the bottom of the rail. Each requires typing `DELETE`. Delete panel removes that panel and opens the next one, or Overview when none remain. Delete project removes the project and returns to Overview. Shared connections stay when only a panel is deleted.
 
-Sales data shows fixture revenue only when that panel is Fake and the project has a revenue source. The default seed does not create one. System health can show the latest status when a snapshot or health check has one. Other panels stay on Coming soon until they have data. If an older database still has a project from a previous seed, delete `backend/data/admin.db` and run `make seed` again.
+Sales data shows fixture revenue when that panel is Fake. The default seed does not create a project. System health can show the latest status when a snapshot or health check has one. Other panels stay on Coming soon until they have data. If an older database still has a project from a previous seed, delete `backend/data/admin.db` and run `make seed` again.
 
 ## Test
 
@@ -105,7 +105,7 @@ The seed does not create a project or a source binding. Charge, cost, and health
 | `POST` | `/api/projects` | Create a project and its panels |
 | `DELETE` | `/api/projects/{slug}` | Remove a project, its panels, connections, keys, and snapshots |
 | `DELETE` | `/api/projects/{slug}/panels/{panel}` | Remove one panel. Shared connections stay |
-| `GET` | `/api/projects/{slug}/revenue` | One project's revenue, when a source is bound |
+| `GET` | `/api/projects/{slug}/revenue` | Fixture revenue when Sales data is Fake |
 | `GET` | `/api/projects/{slug}/connections` | Named connections on the project |
 | `POST` | `/api/projects/{slug}/connections` | Create a Push or HTTP health connection |
 | `GET` | `/api/projects/{slug}/panels/{panel}/settings` | The panel's source, connection, and last received time |
